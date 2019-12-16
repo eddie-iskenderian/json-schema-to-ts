@@ -3,7 +3,7 @@
 import {whiteBright} from 'cli-color'
 import {JSONSchema4} from 'json-schema'
 import minimist = require('minimist')
-import {readFile, writeFile} from 'mz/fs'
+import {readdir, readFile, writeFile} from 'mz/fs'
 import {resolve} from 'path'
 import stdin = require('stdin')
 import {compile, Options} from './index'
@@ -28,9 +28,14 @@ async function main(argv: minimist.ParsedArgs) {
   const argOut: string = argv._[1] || argv.output
 
   try {
-    const schema: JSONSchema4 = JSON.parse(await readInput(argIn))
-    const ts = await compile(schema, argIn, argv as Partial<Options>)
-    await writeOutput(ts, argOut)
+    const ts: string[] = [];
+    const schemas = await readdir(argIn);
+    for (const schema of schemas) {
+       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`))
+       const tsDef = await compile(jsonSchema, argIn, argv as Partial<Options>)
+       ts.push(tsDef);
+    }
+    await writeOutput(ts.join(`\n`), argOut)
   } catch (e) {
     console.error(whiteBright.bgRedBright('error'), e)
     process.exit(1)
