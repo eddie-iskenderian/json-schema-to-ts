@@ -6,6 +6,7 @@ import minimist = require('minimist')
 import {readdir, readFile, writeFile} from 'mz/fs'
 import {resolve} from 'path'
 import stdin = require('stdin')
+import * as _ from 'lodash';
 import {compile, Options} from './index'
 
 main(
@@ -32,7 +33,7 @@ async function main(argv: minimist.ParsedArgs) {
     const schemas = await readdir(argIn);
     for (const schema of schemas) {
        const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`))
-       const tsDef = await compile(jsonSchema, argIn, argv as Partial<Options>)
+       const tsDef = await compile(jsonSchema, argIn, _.extend(argv, { declareExternallyReferenced: false }) as Partial<Options>)
        ts.push(tsDef);
     }
     await writeOutput(ts.join(`\n`), argOut)
@@ -78,8 +79,6 @@ Boolean values can be set to false using the 'no-' prefix.
 
   --cwd=XXX
       Root directory for resolving $ref
-  --declareExternallyReferenced
-      Declare external schemas referenced via '$ref'?
   --enableConstEnums
       Prepend enums with 'const'?
   --style.XXX=YYY
