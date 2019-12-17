@@ -29,14 +29,17 @@ async function main(argv: minimist.ParsedArgs) {
   const argOut: string = argv._[1] || argv.output
 
   try {
+    const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false });
     const ts: string[] = [];
     const schemas = await readdir(argIn);
     for (const schema of schemas) {
        const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`))
-       const tsDef = await compile(jsonSchema, argIn, _.extend(argv, { declareExternallyReferenced: false }) as Partial<Options>)
+       const tsDef = await compile(jsonSchema, argIn, options);
        ts.push(tsDef);
+       // Null the banner comment after the first schema type definition
+       options.bannerComment = '';
     }
-    await writeOutput(ts.join(`\n`), argOut)
+    await writeOutput(ts.join(`\n`), argOut);
   } catch (e) {
     console.error(whiteBright.bgRedBright('error'), e)
     process.exit(1)
