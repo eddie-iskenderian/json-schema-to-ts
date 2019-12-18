@@ -29,7 +29,7 @@ async function main(argv: minimist.ParsedArgs) {
   const argOut: string = argv._[1] || argv.output
 
   try {
-    const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false });
+    const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false, style: { printWidth: 80 } });
     const ts: string[] = [];
     const schemas = await readdir(argIn);
     for (const schema of schemas) {

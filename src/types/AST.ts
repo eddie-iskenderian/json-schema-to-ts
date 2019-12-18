@@ -70,6 +70,7 @@ export interface TInterfaceParam {
   isRequired: boolean
   isPatternProperty: boolean
   isUnreachableDefinition: boolean
+  default?: JSONSchema4Type;
 }
 
 export interface TIntersection extends AbstractAST {
