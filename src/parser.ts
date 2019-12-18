@@ -344,8 +344,8 @@ function parseSchema(
   let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => {
     const required: boolean = includes(schema.required || [], key);
 
-    if (required && value.default === undefined) {
-      throw `Property ${ key } in schema ${ schema.id } is required but has no default. Required fields must have a specified default value.`;
+    if (!required && value.default === undefined) {
+      throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
     return {
       ast: parse(value, options, rootSchema, key, true, processed, usedNames),

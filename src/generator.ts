@@ -384,7 +384,7 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     generateInterface(ast, options) +
     (
       `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
-      `${ generateInitialiserDefintion(ast, options) } =>` +
+      `${ generateInitialiserDefintion(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
       `${ generateInitialiserImpl(ast) };`
     )
   )
