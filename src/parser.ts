@@ -330,6 +330,38 @@ function newNamedInterface(
   throw Error(format('Supertype must have standalone name!', namedInterface))
 }
 
+// Validates the provided response given the type of an AST
+function validateDefault(ast: AST, defaultValue: {}|null): boolean {
+  switch (ast.type) {
+    case 'ANY':
+      return true;
+    case 'ARRAY':
+    case 'TUPLE':
+      return Array.isArray(defaultValue) && defaultValue.length == 0;
+    case 'BOOLEAN':
+      return typeof defaultValue === 'boolean';
+    case 'INTERFACE':
+    case 'INTERSECTION':
+    case 'OBJECT':
+    case 'REFERENCE':
+    case 'UNION':
+    case 'CUSTOM_TYPE':
+      return defaultValue === null
+    case 'LITERAL':
+      return typeof defaultValue === 'boolean'
+        || typeof defaultValue === 'string'
+        || typeof defaultValue === 'number'
+        || typeof defaultValue === 'boolean';
+    case 'NUMBER':
+      return typeof defaultValue === 'number';
+    case 'NULL':
+      return defaultValue === null
+    case 'STRING':
+      return typeof defaultValue === 'string';
+  }
+  return false;
+}
+
 /**
  * Helper to parse schema properties into params on the parent schema's type
  */
@@ -347,13 +379,20 @@ function parseSchema(
     if (!required && value.default === undefined) {
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
+
+    const ast: AST = parse(value, options, rootSchema, key, true, processed, usedNames);    
+    //const paramDefault: string = '';
+    if (value.default !== undefined && !validateDefault(ast, value.default)) {
+      throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
+    }
+
     return {
-      ast: parse(value, options, rootSchema, key, true, processed, usedNames),
+      ast,
       isPatternProperty: false,
       isRequired: includes(schema.required || [], key),
       isUnreachableDefinition: false,
       keyName: key,
-      default: value.default
+      default: typeof value.default === 'string' ? `'${ value.default }'` : value.default
     }
   });
 
