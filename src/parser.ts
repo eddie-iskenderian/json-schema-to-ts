@@ -341,15 +341,14 @@ function parseSchema(
   usedNames: UsedNames,
   parentSchemaName: string
 ): TInterfaceParam[] {
-  let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => { 
-    return {
+  let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => ({ 
     ast: parse(value, options, rootSchema, key, true, processed, usedNames),
     isPatternProperty: false,
     isRequired: includes(schema.required || [], key),
     isUnreachableDefinition: false,
     keyName: key,
     default: value.default
-  }});
+  }));
 
   let singlePatternProperty = false
   if (schema.patternProperties) {
