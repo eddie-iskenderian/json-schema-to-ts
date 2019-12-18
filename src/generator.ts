@@ -318,6 +318,45 @@ function generateInterface(ast: TInterface, options: Options): string {
   )
 }
 
+function generateInitialiserDefintion(ast: TInterface, options: Options): string {
+  return (
+    `(\n` +
+    `input: {` +
+    '\n' +
+    ast.params
+      .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
+      .map(
+        ({isRequired, keyName, ast}) =>
+          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+      )
+      .map(
+        ([isRequired, keyName, ast, type]) =>
+          escapeKeyName(keyName) +
+          (isRequired ? '' : '?') +
+          ': ' +
+          (hasStandaloneName(ast) ? toSafeString(type) : type)
+      )
+      .join(',\n') +
+    '\n' +
+    '})'
+  )
+}
+
+function generateInitialiserImpl(rootAst: TInterface): string {
+  return (
+    `({\n` +
+    rootAst.params
+      .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
+      .map(param => 
+        `${ escapeKeyName(param.keyName) }: ` +
+        (param.isRequired ? `input.${ escapeKeyName(param.keyName) }` : `input.${ escapeKeyName(param.keyName) } === undefined ? ${ param.default } : input.${ escapeKeyName(param.keyName) }`)
+      )
+      .join(',\n') +
+    '\n' +
+    '})'
+  )
+}
+
 function generateComment(comment: string): string {
   return ['/**', ...comment.split('\n').map(_ => ' * ' + _), ' */'].join('\n')
 }
@@ -342,7 +381,12 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     (ast.superTypes.length > 0
       ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
       : '') +
-    generateInterface(ast, options)
+    generateInterface(ast, options) +
+    (
+      `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
+      `${ generateInitialiserDefintion(ast, options) } =>` +
+      `${ generateInitialiserImpl(ast) };`
+    )
   )
 }
 
