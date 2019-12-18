@@ -380,7 +380,7 @@ function parseSchema(
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
 
-    const ast = parse(value, options, rootSchema, key, true, processed, usedNames);    
+    const ast: AST = parse(value, options, rootSchema, key, true, processed, usedNames);    
     //const paramDefault: string = '';
     if (value.default !== undefined && !validateDefault(ast, value.default)) {
       throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
