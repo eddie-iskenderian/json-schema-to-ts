@@ -341,14 +341,21 @@ function parseSchema(
   usedNames: UsedNames,
   parentSchemaName: string
 ): TInterfaceParam[] {
-  let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => ({ 
-    ast: parse(value, options, rootSchema, key, true, processed, usedNames),
-    isPatternProperty: false,
-    isRequired: includes(schema.required || [], key),
-    isUnreachableDefinition: false,
-    keyName: key,
-    default: value.default
-  }));
+  let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => {
+    const required: boolean = includes(schema.required || [], key);
+
+    if (required && value.default === undefined) {
+      throw `Property ${ key } in schema ${ schema.id } is required but has no default. Required fields must have a specified default value.`;
+    }
+    return {
+      ast: parse(value, options, rootSchema, key, true, processed, usedNames),
+      isPatternProperty: false,
+      isRequired: includes(schema.required || [], key),
+      isUnreachableDefinition: false,
+      keyName: key,
+      default: value.default
+    }
+  });
 
   let singlePatternProperty = false
   if (schema.patternProperties) {
