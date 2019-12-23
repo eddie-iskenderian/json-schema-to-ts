@@ -33,14 +33,19 @@ async function main(argv: minimist.ParsedArgs) {
     const ts: string[] = [];
     const schemas = await readdir(argIn);
     for (const schema of schemas) {
-       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
-       // Disable addtional items and properties
-       jsonSchema.additionalItems = false;
-       jsonSchema.additionalProperties = false;
-       const tsDef = await compile(jsonSchema, argIn, options);
-       ts.push(tsDef);
-       // Null the banner comment after the first schema type definition
-       options.bannerComment = '';
+      const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
+      // Disable addtional items and properties
+      jsonSchema.additionalItems = false;
+      jsonSchema.additionalProperties = false;
+      if (jsonSchema.allOf && typeof jsonSchema.allOf !== 'boolean') {
+        for (const item of jsonSchema.allOf) {
+          item.additionalProperties = false;
+        }
+      }
+      const tsDef = await compile(jsonSchema, argIn, options);
+      ts.push(tsDef);
+      // Null the banner comment after the first schema type definition
+      options.bannerComment = '';
     }
     await writeOutput(ts.join(`\n`), argOut);
   } catch (e) {
