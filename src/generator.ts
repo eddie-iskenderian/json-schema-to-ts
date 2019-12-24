@@ -187,7 +187,11 @@ function generateRawType(ast: AST, options: Options): string {
     case 'INTERFACE':
       return generateInterface(ast, options)
     case 'INTERSECTION':
-      return generateSetOperation(ast, options)
+      {
+      const a = generateSetOperation(ast, options)
+      generateSetInitialiserDefinition(ast, options);
+      return a;
+      }
     case 'LITERAL':
       return JSON.stringify(ast.params)
     case 'NUMBER':
@@ -285,6 +289,20 @@ function generateRawType(ast: AST, options: Options): string {
   }
 }
 
+function generateRawDefinition(ast: AST, options: Options): string {
+  switch (ast.type) {
+    case 'INTERFACE':
+      return generateInitialiserMemberDefintion(ast, options)
+    case 'REFERENCE':
+      {
+        //console.log(`${ast.params}`);
+      return ast.params
+      }
+    default:
+      return '';
+  }
+}
+
 /**
  * Generate a Union or Intersection
  */
@@ -292,6 +310,36 @@ function generateSetOperation(ast: TIntersection | TUnion, options: Options): st
   const members = (ast as TUnion).params.map(_ => generateType(_, options))
   const separator = ast.type === 'UNION' ? '|' : '&'
   return members.length === 1 ? members[0] : '(' + members.join(' ' + separator + ' ') + ')'
+}
+
+function generateInitialiserMemberDefintion(ast: TInterface, options: Options): string {
+  //return (
+  console.log(('p' +
+    ast.params
+      .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
+      .map(
+        ({isRequired, keyName, ast}) =>
+          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+      )
+      .map(
+        ([isRequired, keyName, ast, type]) =>
+          escapeKeyName(keyName) +
+          (isRequired ? '' : '?') +
+          ': ' +
+          (hasStandaloneName(ast) ? toSafeString(type) : type)
+      )
+      .join(',\n')
+  ) + 'p');
+  return '';
+}
+/**
+ * Generate a Union or Intersection
+ */
+function generateSetInitialiserDefinition(ast: TIntersection, options: Options): string {
+  console.log(`\n`);
+  /* const members = */ast.params.map(_ => generateRawDefinition(_, options))
+  console.log(`\n`);
+  return '';// members.length === 1 ? members[0] : '(' + members.join(' ' + separator + ' ') + ')'
 }
 
 function generateInterface(ast: TInterface, options: Options): string {
