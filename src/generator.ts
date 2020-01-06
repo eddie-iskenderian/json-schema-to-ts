@@ -188,8 +188,9 @@ function generateRawType(ast: AST, options: Options): string {
       return generateInterface(ast, options)
     case 'INTERSECTION':
       {
-      const a = generateSetOperation(ast, options)
+      const a = generateSetOperation(ast, options);
       generateSetInitialiserDefinition(ast, options);
+      generateSetInitialiserImplementation(ast, options);
       return a;
       }
     case 'LITERAL':
@@ -304,7 +305,7 @@ function generateSetOperation(ast: TIntersection | TUnion, options: Options): st
 function generateSetInitialiserDefinition(ast: TIntersection, options: Options): string {
   console.log((
 
-    `\n` +
+    `(\n` +
     `input: {` +
     '\n' +
 
@@ -328,7 +329,34 @@ function generateSetInitialiserDefinition(ast: TIntersection, options: Options):
         throw 'Must be an interface';
       }
     })
-    .join(`,\n`) + '\n}'
+    .join(`,\n`)
+    + '\n})'
+  ));
+  return '';
+}
+
+function generateSetInitialiserImplementation(ast: TIntersection, _options: Options): string {
+  console.log((
+
+    `\n` +
+    `{` +
+    '\n' +
+
+    ast.params.map(_ => {
+      if (_.type === 'INTERFACE') {
+        return _.params
+          .filter(__ => !__.isPatternProperty && !__.isUnreachableDefinition)
+          .map(param => 
+            `${ escapeKeyName(param.keyName) }: ` +
+            (param.isRequired ? `input.${ escapeKeyName(param.keyName) }` : `input.${ escapeKeyName(param.keyName) } === undefined ? ${ param.default } : input.${ escapeKeyName(param.keyName) }`)
+          )
+          .join(',\n')
+      } else {
+        throw 'Must be an interface';
+      }
+    })
+    .join(`,\n`)
+    + '\n}'
   ));
   return '';
 }
