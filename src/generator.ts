@@ -289,20 +289,6 @@ function generateRawType(ast: AST, options: Options): string {
   }
 }
 
-function generateRawDefinition(ast: AST, options: Options): string {
-  switch (ast.type) {
-    case 'INTERFACE':
-      return generateInitialiserMemberDefintion(ast, options)
-    case 'REFERENCE':
-      {
-        //console.log(`${ast.params}`);
-      return ast.params
-      }
-    default:
-      return '';
-  }
-}
-
 /**
  * Generate a Union or Intersection
  */
@@ -312,34 +298,39 @@ function generateSetOperation(ast: TIntersection | TUnion, options: Options): st
   return members.length === 1 ? members[0] : '(' + members.join(' ' + separator + ' ') + ')'
 }
 
-function generateInitialiserMemberDefintion(ast: TInterface, options: Options): string {
-  //return (
-  console.log(('p' +
-    ast.params
-      .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
-      .map(
-        ({isRequired, keyName, ast}) =>
-          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
-      )
-      .map(
-        ([isRequired, keyName, ast, type]) =>
-          escapeKeyName(keyName) +
-          (isRequired ? '' : '?') +
-          ': ' +
-          (hasStandaloneName(ast) ? toSafeString(type) : type)
-      )
-      .join(',\n')
-  ) + 'p');
-  return '';
-}
 /**
  * Generate a Union or Intersection
  */
 function generateSetInitialiserDefinition(ast: TIntersection, options: Options): string {
-  console.log(`\n`);
-  /* const members = */ast.params.map(_ => generateRawDefinition(_, options))
-  console.log(`\n`);
-  return '';// members.length === 1 ? members[0] : '(' + members.join(' ' + separator + ' ') + ')'
+  console.log((
+
+    `\n` +
+    `input: {` +
+    '\n' +
+
+    ast.params.map(_ => {
+      if (_.type === 'INTERFACE') {
+        return _.params
+          .filter(__ => !__.isPatternProperty && !__.isUnreachableDefinition)
+          .map(
+            ({isRequired, keyName, ast}) =>
+              [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+          )
+          .map(
+            ([isRequired, keyName, ast, type]) =>
+              escapeKeyName(keyName) +
+              (isRequired ? '' : '?') +
+              ': ' +
+              (hasStandaloneName(ast) ? toSafeString(type) : type)
+          )
+          .join(`,\n`)
+      } else {
+        throw 'Must be an interface';
+      }
+    })
+    .join(`,\n`) + '\n}'
+  ));
+  return '';
 }
 
 function generateInterface(ast: TInterface, options: Options): string {
