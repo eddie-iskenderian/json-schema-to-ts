@@ -37,8 +37,14 @@ async function main(argv: minimist.ParsedArgs) {
       // Disable addtional items and properties
       jsonSchema.additionalItems = false;
       jsonSchema.additionalProperties = false;
-      if (jsonSchema.allOf && typeof jsonSchema.allOf !== 'boolean') {
+      if (jsonSchema.allOf) {
         for (const item of jsonSchema.allOf) {
+          item.additionalItems = false;
+          item.additionalProperties = false;
+        }
+      } else if (jsonSchema.anyOf) {
+        for (const item of jsonSchema.anyOf) {
+          item.additionalItems = false;
           item.additionalProperties = false;
         }
       }
