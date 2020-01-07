@@ -134,26 +134,12 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         .join('\n')
       break
     case 'INTERSECTION':
-      type = [
-        hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : undefined,
-        ast.params
-          .map(ast => declareNamedTypes(ast, options, rootASTName, processed))
-          .filter(Boolean)
-          .join('\n')
-      ]
-      .filter(Boolean)
-      .join('\n')
+      console.log(ast.standaloneName)
+      type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : ''
       break
     case 'UNION':
-      type = [
-        hasStandaloneName(ast) ? generateStandaloneUnion(ast, options) : undefined,
-        ast.params
-          .map(ast => declareNamedTypes(ast, options, rootASTName, processed))
-          .filter(Boolean)
-          .join('\n')
-        ]
-        .filter(Boolean)
-        .join('\n')
+      console.log(ast.standaloneName)
+      type = hasStandaloneName(ast) ? generateStandaloneUnion(ast) : ''
       break
     case 'TUPLE':
       type = [
@@ -301,7 +287,7 @@ function generateRawType(ast: AST, options: Options): string {
         return paramsToString(addSpreadParam(paramsList))
       })()
     case 'UNION':
-      return generateUnionMembers(ast, options)
+      return generateUnionMembers(ast)
     case 'CUSTOM_TYPE':
       return ast.params
   }
@@ -319,40 +305,14 @@ function expectAstType(ast: AST, type: AST_TYPE) {
 /**
  * Generate a union
  */
-function generateUnionMembers(ast: TUnion, options: Options): string {
+function generateUnionMembers(ast: TUnion): string {
   const members = ast.params.map(_ => {
-    expectAstType(_, 'INTERFACE')
-    return wrapInterface(generateInterfaceMembers(_ as TInterface, options));
+    if (!hasStandaloneName(_)) {
+      throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
+    }
+    return toSafeString(_.standaloneName);
   });
   return members.length === 1 ? members[0] : members.join(`|`);
-}
-
-/**
- * Generate the parameters required for the initialiser of a union type
- */
-function generateUnionInitialiserParams(ast: TUnion, options: Options): string {
-  return (
-    ast.params.map(_ => {
-      expectAstType(_, 'INTERFACE')
-      const intrface: TInterface = _ as TInterface;
-      return generateInitialiserParams(intrface, options);
-    })
-    .join(`,\n`)
-  );
-}
-
-/**
- * Generate the assignments required for the initialiser of a union type
- */
-function generateUnionInitialiserAssignments(ast: TUnion, _options: Options): string {
-  return (
-    ast.params.map(_ => {
-      expectAstType(_, 'INTERFACE')
-      const intrface: TInterface = _ as TInterface;
-      return generateInterfaceInitialiserAssignments(intrface);
-    })
-    .join(`,\n`)
-  );
 }
 
 /**
@@ -383,7 +343,7 @@ function generateIntersectionInitialiserParams(ast: TIntersection, options: Opti
 /**
  * Generate the assignments required for the initialiser of an intersection type
  */
-function generateIntersectionInitialiserAssignments(ast: TIntersection, _options: Options): string {
+function generateIntersectionInitialiserAssignments(ast: TIntersection): string {
   return (
     ast.params.map(_ => {
       expectAstType(_, 'INTERFACE')
@@ -418,8 +378,8 @@ function generateInterfaceMembers(ast: TInterface, options: Options): string {
   )
 }
 
-function wrapInterfaceInitialiserParams(rendered: string): string {
-  return `(\ninput: {\n${ rendered }\n})`;
+function wrapInterfaceInitialiserParams(rendered: string, omitBraces: boolean = false): string {
+  return `(\ninput: ${ omitBraces ? '' : '{' }\n${ rendered }\n${ omitBraces ? '' : '}' })`;
 }
 
 function generateInitialiserParams(ast: TInterface, options: Options): string {
@@ -496,19 +456,15 @@ function generateStandaloneIntersection(ast: ASTWithStandaloneName, options: Opt
     `\n\n` +
     `export const make${ toSafeString(ast.standaloneName) } = ` +
     `${ wrapInterfaceInitialiserParams(generateIntersectionInitialiserParams(intersection, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
-    `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection, options)) };`
+    `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection)) };`
   );
 }
 
-function generateStandaloneUnion(ast: ASTWithStandaloneName, options: Options): string {
+function generateStandaloneUnion(ast: ASTWithStandaloneName): string {
   const union: TUnion = ast as TUnion;
   return (
     `${ hasComment(ast) ? generateComment(ast.comment) + '\n' : '' }` +
-    `export type ${ toSafeString(ast.standaloneName)} = ${ generateUnionMembers(union, options) }` +
-    `\n\n` +
-    `export const make${ toSafeString(ast.standaloneName) } = ` +
-    `${ wrapInterfaceInitialiserParams(generateUnionInitialiserParams(union, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
-    `${ wrapInterfaceInitialiserAssignments(generateUnionInitialiserAssignments(union, options)) };`
+    `export type ${ toSafeString(ast.standaloneName)} = ${ generateUnionMembers(union) };\n`
   );
 }
 

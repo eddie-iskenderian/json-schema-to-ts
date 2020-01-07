@@ -36,18 +36,6 @@ async function main(argv: minimist.ParsedArgs) {
       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
       // Disable addtional items and properties
       jsonSchema.additionalItems = false;
-      jsonSchema.additionalProperties = false;
-      if (jsonSchema.allOf) {
-        for (const item of jsonSchema.allOf) {
-          item.additionalItems = false;
-          item.additionalProperties = false;
-        }
-      } else if (jsonSchema.anyOf) {
-        for (const item of jsonSchema.anyOf) {
-          item.additionalItems = false;
-          item.additionalProperties = false;
-        }
-      }
       const tsDef = await compile(jsonSchema, argIn, options);
       ts.push(tsDef);
       // Null the banner comment after the first schema type definition

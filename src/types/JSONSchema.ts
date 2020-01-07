@@ -29,8 +29,6 @@ export interface JSONSchema extends JSONSchema4 {
 // }
 
 export interface NormalizedJSONSchema extends JSONSchema {
-  additionalItems?: boolean | NormalizedJSONSchema
-  additionalProperties: boolean | NormalizedJSONSchema
   items?: NormalizedJSONSchema | NormalizedJSONSchema[]
   definitions?: {
     [k: string]: NormalizedJSONSchema
