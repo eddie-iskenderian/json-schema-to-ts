@@ -12,7 +12,8 @@ import {
   TInterface,
   TIntersection,
   TNamedInterface,
-  TUnion
+  TUnion,
+  AST_TYPE
 } from './types/AST'
 import {log, toSafeString} from './utils'
 
@@ -185,12 +186,9 @@ function generateRawType(ast: AST, options: Options): string {
     case 'BOOLEAN':
       return 'boolean'
     case 'INTERFACE':
-      return generateInterface(ast, options)
+      return generateInterfaceMembers(ast, options)
     case 'INTERSECTION': {
-      const a = generateSetOperation(ast, options);
-      generateSetInitialiserDefinition(ast, options);
-      generateSetInitialiserImplementation(ast, options);
-      return a;
+      return generateIntersectionMembers(ast, options);
     }
     case 'LITERAL':
       return JSON.stringify(ast.params)
@@ -283,84 +281,63 @@ function generateRawType(ast: AST, options: Options): string {
         return paramsToString(addSpreadParam(paramsList))
       })()
     case 'UNION':
-      return generateSetOperation(ast, options)
+      return generateIntersectionMembers(ast, options)
     case 'CUSTOM_TYPE':
       return ast.params
   }
 }
 
 /**
- * Generate a Union or Intersection
+ * Check the AST type and throws when a type other than the expected type encountered
  */
-function generateSetOperation(ast: TIntersection | TUnion, options: Options): string {
-  const members = (ast as TUnion).params.map(_ => generateType(_, options))
-  const separator = ast.type === 'UNION' ? '|' : '&'
-  return members.length === 1 ? members[0] : '(' + members.join(' ' + separator + ' ') + ')'
+function expectAstType(ast: AST, type: AST_TYPE) {
+  if (ast.type !== type) {
+    throw `Expected an AST type of '${ type }', but received a '${ ast.type }'`;
+  }
+}
+
+/**
+ * Generate an intersection
+ */
+function generateIntersectionMembers(ast: TIntersection | TUnion, options: Options): string {
+  const members = (ast as TUnion).params.map(_ => {
+    expectAstType(_, 'INTERFACE')
+    return generateInterfaceMembers(_ as TInterface, options);
+  });
+  return members.length === 1 ? members[0] : members.join(`\n`);
 }
 
 /**
  * Generate a Union or Intersection
  */
-function generateSetInitialiserDefinition(ast: TIntersection, options: Options): string {
+function generateIntersectionInitialiserParams(ast: TIntersection, options: Options): string {
   return (
-    `(\n` +
-    `input: {` +
-    '\n' +
-
     ast.params.map(_ => {
-      if (_.type === 'INTERFACE') {
-        return _.params
-          .filter(__ => !__.isPatternProperty && !__.isUnreachableDefinition)
-          .map(
-            ({isRequired, keyName, ast}) =>
-              [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
-          )
-          .map(
-            ([isRequired, keyName, ast, type]) =>
-              escapeKeyName(keyName) +
-              (isRequired ? '' : '?') +
-              ': ' +
-              (hasStandaloneName(ast) ? toSafeString(type) : type)
-          )
-          .join(`,\n`)
-      } else {
-        throw 'Must be an interface';
-      }
+      expectAstType(_, 'INTERFACE')
+      const intrface: TInterface = _ as TInterface;
+      return generateInitialiserParams(intrface, options);
     })
     .join(`,\n`)
-    + '\n})'
   );
 }
 
-function generateSetInitialiserImplementation(ast: TIntersection, _options: Options): string {
+function generateIntersectionInitialiserAssignments(ast: TIntersection, _options: Options): string {
   return (
-
-    `\n` +
-    `({` +
-    '\n' +
-
     ast.params.map(_ => {
-      if (_.type === 'INTERFACE') {
-        return _.params
-          .filter(__ => !__.isPatternProperty && !__.isUnreachableDefinition)
-          .map(param => 
-            `${ escapeKeyName(param.keyName) }: ` +
-            (param.isRequired ? `input.${ escapeKeyName(param.keyName) }` : `input.${ escapeKeyName(param.keyName) } === undefined ? ${ param.default } : input.${ escapeKeyName(param.keyName) }`)
-          )
-          .join(',\n')
-      } else {
-        throw 'Must be an interface';
-      }
+      expectAstType(_, 'INTERFACE')
+      const intrface: TInterface = _ as TInterface;
+      return generateInterfaceInitialiserAssignments(intrface);
     })
     .join(`,\n`)
-    + '\n})'
   );
 }
 
-function generateInterface(ast: TInterface, options: Options): string {
+function wrapInterface(rendered: string) {
+  return `{\n${ rendered }\n}`
+}
+
+function generateInterfaceMembers(ast: TInterface, options: Options): string {
   return (
-    `{` +
-    '\n' +
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(
@@ -375,17 +352,16 @@ function generateInterface(ast: TInterface, options: Options): string {
           ': ' +
           (hasStandaloneName(ast) ? toSafeString(type) : type)
       )
-      .join('\n') +
-    '\n' +
-    '}'
+      .join('\n')
   )
 }
 
-function generateInitialiserDefintion(ast: TInterface, options: Options): string {
+function wrapInterfaceInitialiserParams(rendered: string): string {
+  return `(\ninput: {\n${ rendered }\n})`;
+}
+
+function generateInitialiserParams(ast: TInterface, options: Options): string {
   return (
-    `(\n` +
-    `input: {` +
-    '\n' +
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(
@@ -399,24 +375,23 @@ function generateInitialiserDefintion(ast: TInterface, options: Options): string
           ': ' +
           (hasStandaloneName(ast) ? toSafeString(type) : type)
       )
-      .join(',\n') +
-    '\n' +
-    '})'
+      .join(',\n')
   )
 }
 
-function generateInitialiserImpl(rootAst: TInterface): string {
+function wrapInterfaceInitialiserAssignments(rendered: string): string {
+  return `({\n${ rendered }\n})`;
+}
+
+function generateInterfaceInitialiserAssignments(rootAst: TInterface): string {
   return (
-    `({\n` +
     rootAst.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(param => 
         `${ escapeKeyName(param.keyName) }: ` +
         (param.isRequired ? `input.${ escapeKeyName(param.keyName) }` : `input.${ escapeKeyName(param.keyName) } === undefined ? ${ param.default } : input.${ escapeKeyName(param.keyName) }`)
       )
-      .join(',\n') +
-    '\n' +
-    '})'
+      .join(',\n')
   )
 }
 
@@ -444,56 +419,24 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     (ast.superTypes.length > 0
       ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
       : '') +
-    generateInterface(ast, options) +
-    (
-      `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
-      `${ generateInitialiserDefintion(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
-      `${ generateInitialiserImpl(ast) };`
-    )
+    wrapInterface(generateInterfaceMembers(ast, options)) +
+    `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
+    `${ wrapInterfaceInitialiserParams(generateInitialiserParams(ast, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
+    `${ wrapInterfaceInitialiserAssignments(generateInterfaceInitialiserAssignments(ast)) };`
   )
 }
 
-// function generateStandaloneIntersection(ast: TIntersection, options: Options): string {
-//   return (
-//       generateSetOperation(ast, options);
-//       generateSetInitialiserDefinition(ast, options);
-//       generateSetInitialiserImplementation(ast, options);
-//     (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
-//     `export interface ${toSafeString(ast.standaloneName)} ` +
-//     (ast.superTypes.length > 0
-//       ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
-//       : '') +
-//     generateInterface(ast, options) +
-//     (
-//       `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
-//       `${ generateInitialiserDefintion(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
-//       `${ generateInitialiserImpl(ast) };`
-//     )
-//   )
-// }
 function generateStandaloneIntersection(ast: ASTWithStandaloneName, options: Options): string {
-  if (ast.type !== 'INTERSECTION') {
-    throw 'Should be an allOf';
-  }
-  /* return */ 
-  const a = (
-    (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
-    `export type ${toSafeString(ast.standaloneName)} = ${generateSetOperation(
-      ast,
-      options
-    )}` +
-    (
-      `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
-      `${ generateSetInitialiserDefinition(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
-      `${ generateSetInitialiserImplementation(ast, options) };`
-    )
+  const intersection: TIntersection = ast as TIntersection;
+  return (
+    `${ hasComment(ast) ? generateComment(ast.comment) + '\n' : '' }` +
+    `export interface ${ toSafeString(ast.standaloneName)} ${ wrapInterface(generateIntersectionMembers(intersection, options)) }` +
+    `\n\n` +
+    `export const make${ toSafeString(ast.standaloneName) } = ` +
+    `${ wrapInterfaceInitialiserParams(generateIntersectionInitialiserParams(intersection, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
+    `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection, options)) };`
   );
-  console.log(a);
-  return a;
 }
-
-      // generateSetInitialiserDefinition(ast, options);
-      // generateSetInitialiserImplementation(ast, options);
 
 function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): string {
   return (

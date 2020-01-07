@@ -10,6 +10,7 @@ export function typeOfSchema(schema: JSONSchema): SCHEMA_TYPE {
   if (schema.anyOf) return 'ANY_OF'
   if (schema.oneOf) return 'ONE_OF'
   if (Array.isArray(schema.type)) return 'UNION'
+  console.log(schema.type);
   if (schema.type === 'null') return 'NULL'
   if (schema.items) return 'TYPED_ARRAY'
   if (schema.enum && schema.tsEnumNames) return 'NAMED_ENUM'
