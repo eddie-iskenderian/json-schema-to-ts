@@ -73,6 +73,7 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
       type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed)
       break
     case 'INTERFACE':
+      console.log("Standalone interface", ast.standaloneName)
       type = [
         hasStandaloneName(ast) &&
           (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
@@ -84,17 +85,6 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
       ]
         .filter(Boolean)
         .join('\n')
-      break
-    case 'INTERSECTION':
-    case 'TUPLE':
-    case 'UNION':
-      type = ast.params
-        .map(_ => declareNamedInterfaces(_, options, rootASTName, processed))
-        .filter(Boolean)
-        .join('\n')
-      if (ast.type === 'TUPLE' && ast.spreadParam) {
-        type += declareNamedInterfaces(ast.spreadParam, options, rootASTName, processed)
-      }
       break
     default:
       type = ''
@@ -124,21 +114,12 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
       type = ''
       break
     case 'INTERFACE':
-      type = getSuperTypesAndParams(ast)
-        .map(
-          ast =>
-            (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
-            declareNamedTypes(ast, options, rootASTName, processed)
-        )
-        .filter(Boolean)
-        .join('\n')
+      type = ''
       break
     case 'INTERSECTION':
-      console.log(ast.standaloneName)
       type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : ''
       break
     case 'UNION':
-      console.log(ast.standaloneName)
       type = hasStandaloneName(ast) ? generateStandaloneUnion(ast) : ''
       break
     case 'TUPLE':
@@ -160,7 +141,6 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         type = generateStandaloneType(ast, options)
       }
   }
-
   return type
 }
 
