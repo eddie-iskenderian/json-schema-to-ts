@@ -136,7 +136,7 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
     case 'TUPLE':
     case 'UNION':
       type = [
-        hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
+        hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : undefined,
         ast.params
           .map(ast => declareNamedTypes(ast, options, rootASTName, processed))
           .filter(Boolean)
@@ -186,13 +186,12 @@ function generateRawType(ast: AST, options: Options): string {
       return 'boolean'
     case 'INTERFACE':
       return generateInterface(ast, options)
-    case 'INTERSECTION':
-      {
+    case 'INTERSECTION': {
       const a = generateSetOperation(ast, options);
       generateSetInitialiserDefinition(ast, options);
       generateSetInitialiserImplementation(ast, options);
       return a;
-      }
+    }
     case 'LITERAL':
       return JSON.stringify(ast.params)
     case 'NUMBER':
@@ -303,8 +302,7 @@ function generateSetOperation(ast: TIntersection | TUnion, options: Options): st
  * Generate a Union or Intersection
  */
 function generateSetInitialiserDefinition(ast: TIntersection, options: Options): string {
-  console.log((
-
+  return (
     `(\n` +
     `input: {` +
     '\n' +
@@ -331,15 +329,14 @@ function generateSetInitialiserDefinition(ast: TIntersection, options: Options):
     })
     .join(`,\n`)
     + '\n})'
-  ));
-  return '';
+  );
 }
 
 function generateSetInitialiserImplementation(ast: TIntersection, _options: Options): string {
-  console.log((
+  return (
 
     `\n` +
-    `{` +
+    `({` +
     '\n' +
 
     ast.params.map(_ => {
@@ -356,9 +353,8 @@ function generateSetInitialiserImplementation(ast: TIntersection, _options: Opti
       }
     })
     .join(`,\n`)
-    + '\n}'
-  ));
-  return '';
+    + '\n})'
+  );
 }
 
 function generateInterface(ast: TInterface, options: Options): string {
@@ -456,6 +452,48 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     )
   )
 }
+
+// function generateStandaloneIntersection(ast: TIntersection, options: Options): string {
+//   return (
+//       generateSetOperation(ast, options);
+//       generateSetInitialiserDefinition(ast, options);
+//       generateSetInitialiserImplementation(ast, options);
+//     (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
+//     `export interface ${toSafeString(ast.standaloneName)} ` +
+//     (ast.superTypes.length > 0
+//       ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
+//       : '') +
+//     generateInterface(ast, options) +
+//     (
+//       `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
+//       `${ generateInitialiserDefintion(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
+//       `${ generateInitialiserImpl(ast) };`
+//     )
+//   )
+// }
+function generateStandaloneIntersection(ast: ASTWithStandaloneName, options: Options): string {
+  if (ast.type !== 'INTERSECTION') {
+    throw 'Should be an allOf';
+  }
+  /* return */ 
+  const a = (
+    (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
+    `export type ${toSafeString(ast.standaloneName)} = ${generateSetOperation(
+      ast,
+      options
+    )}` +
+    (
+      `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
+      `${ generateSetInitialiserDefinition(ast, options) }: ${ toSafeString(ast.standaloneName) } =>` +
+      `${ generateSetInitialiserImplementation(ast, options) };`
+    )
+  );
+  console.log(a);
+  return a;
+}
+
+      // generateSetInitialiserDefinition(ast, options);
+      // generateSetInitialiserImplementation(ast, options);
 
 function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): string {
   return (
