@@ -4,7 +4,7 @@ export type AST_TYPE = AST['type']
 
 export type AST = TAny | TArray | TBoolean | TEnum | TInterface | TNamedInterface
   | TIntersection | TLiteral | TNumber | TNull | TObject | TReference
-  | TString | TTuple | TUnion | TCustomType
+  | TString | TTuple | TUnion | TCustomType | TEnumAsUnion
 
 export interface AbstractAST {
   comment?: string
@@ -54,14 +54,12 @@ export interface TEnumParam {
 export interface TInterface extends AbstractAST {
   type: 'INTERFACE'
   params: TInterfaceParam[]
-  superTypes: TNamedInterface[]
 }
 
 export interface TNamedInterface extends AbstractAST {
   standaloneName: string
   type: 'INTERFACE'
   params: TInterfaceParam[]
-  superTypes: TNamedInterface[]
 }
 
 export interface TInterfaceParam {
@@ -114,6 +112,11 @@ export interface TTuple extends AbstractAST {
 
 export interface TUnion extends AbstractAST {
   type: 'UNION'
+  params: AST[]
+}
+
+export interface TEnumAsUnion extends AbstractAST {
+  type: 'ENUM_AS_UNION'
   params: AST[]
 }
 

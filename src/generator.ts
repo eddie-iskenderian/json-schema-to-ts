@@ -13,7 +13,9 @@ import {
   TIntersection,
   TNamedInterface,
   TUnion,
-  AST_TYPE
+  AST_TYPE,
+  TEnumAsUnion,
+  TLiteral
 } from './types/AST'
 import {log, toSafeString} from './utils'
 
@@ -42,17 +44,6 @@ function declareEnums(ast: AST, options: Options, processed = new Set<AST>()): s
     case 'ENUM':
       type = generateStandaloneEnum(ast, options) + '\n'
       break
-    case 'ARRAY':
-      return declareEnums(ast.params, options, processed)
-    case 'TUPLE':
-      type = ast.params.reduce((prev, ast) => prev + declareEnums(ast, options, processed), '')
-      if (ast.spreadParam) {
-        type += declareEnums(ast.spreadParam, options, processed)
-      }
-      break
-    case 'INTERFACE':
-      type = getSuperTypesAndParams(ast).reduce((prev, ast) => prev + declareEnums(ast, options, processed), '')
-      break
     default:
       return ''
   }
@@ -73,15 +64,10 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
       type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed)
       break
     case 'INTERFACE':
-      console.log("Standalone interface", ast.standaloneName)
       type = [
         hasStandaloneName(ast) &&
           (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
-          generateStandaloneInterface(ast, options),
-        getSuperTypesAndParams(ast)
-          .map(ast => declareNamedInterfaces(ast, options, rootASTName, processed))
-          .filter(Boolean)
-          .join('\n')
+          generateStandaloneInterface(ast, options)
       ]
         .filter(Boolean)
         .join('\n')
@@ -268,6 +254,8 @@ function generateRawType(ast: AST, options: Options): string {
       })()
     case 'UNION':
       return generateUnionMembers(ast)
+    case 'ENUM_AS_UNION':
+      return generateEnumMembers(ast)
     case 'CUSTOM_TYPE':
       return ast.params
   }
@@ -285,7 +273,26 @@ function expectAstType(ast: AST, type: AST_TYPE) {
 /**
  * Generate a union
  */
+function generateEnumMembers(ast: TEnumAsUnion): string {
+  const members = ast.params.map(_ => {
+    expectAstType(_, 'LITERAL');
+    const literal: TLiteral = _ as TLiteral;
+    if (typeof literal.params === 'string') {
+      return `"${ literal.params } "`;
+    } else if (typeof literal.params === 'number') {
+      return `${ literal.params }`;
+    } else {
+      throw `Enum items must be of type 'string' or 'number'`;
+    }
+  });
+  return members.length === 1 ? members[0] : members.join(`|`);
+}
+
+/**
+ * Generate a union
+ */
 function generateUnionMembers(ast: TUnion): string {
+  console.log(ast.standaloneName)
   const members = ast.params.map(_ => {
     if (!hasStandaloneName(_)) {
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
@@ -418,9 +425,6 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
   return (
     (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
     `export interface ${toSafeString(ast.standaloneName)} ` +
-    (ast.superTypes.length > 0
-      ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
-      : '') +
     wrapInterface(generateInterfaceMembers(ast, options)) +
     `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
     `${ wrapInterfaceInitialiserParams(generateInitialiserParams(ast, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
@@ -466,8 +470,4 @@ function escapeKeyName(keyName: string): string {
     return keyName
   }
   return JSON.stringify(keyName)
-}
-
-function getSuperTypesAndParams(ast: TInterface): AST[] {
-  return ast.params.map(param => param.ast).concat(ast.superTypes)
 }
