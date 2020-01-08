@@ -6,11 +6,9 @@ import {Options} from './'
 import {typeOfSchema} from './typeOfSchema'
 import {
   AST,
-  hasStandaloneName,
   T_ANY,
   TInterface,
   TInterfaceParam,
-  TNamedInterface,
   TTuple
 } from './types/AST'
 import {JSONSchema, JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
@@ -226,7 +224,7 @@ function parseNonLiteral(
         keyName,
         params: schema.enum!.map(_ => parse(_, options, rootSchema, undefined, false, processed)),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
-        type: 'UNION'
+        type: 'ENUM_AS_UNION'
       })
     case 'UNNAMED_SCHEMA':
       return set(
@@ -283,40 +281,8 @@ function newInterface(
     keyName,
     params: parseSchema(schema, options, rootSchema, processed, name),
     standaloneName: name,
-    superTypes: parseSuperTypes(schema, options, processed),
     type: 'INTERFACE'
   }
-}
-
-function parseSuperTypes(
-  schema: SchemaSchema,
-  options: Options,
-  processed: Processed
-): TNamedInterface[] {
-  // Type assertion needed because of dereferencing step
-  // TODO: Type it upstream
-  const superTypes = schema.extends as SchemaSchema | SchemaSchema[] | undefined
-  if (!superTypes) {
-    return []
-  }
-  if (Array.isArray(superTypes)) {
-    return superTypes.map(_ => newNamedInterface(_, options, _, processed))
-  }
-  return [newNamedInterface(superTypes, options, superTypes, processed)]
-}
-
-function newNamedInterface(
-  schema: SchemaSchema,
-  options: Options,
-  rootSchema: JSONSchema,
-  processed: Processed
-): TNamedInterface {
-  const namedInterface = newInterface(schema, options, rootSchema, processed)
-  if (hasStandaloneName(namedInterface)) {
-    return namedInterface
-  }
-  // TODO: Generate name if it doesn't have one
-  throw Error(format('Supertype must have standalone name!', namedInterface))
 }
 
 // Validates the provided response given the type of an AST

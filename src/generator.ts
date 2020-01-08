@@ -13,7 +13,9 @@ import {
   TIntersection,
   TNamedInterface,
   TUnion,
-  AST_TYPE
+  AST_TYPE,
+  TEnumAsUnion,
+  TLiteral
 } from './types/AST'
 import {log, toSafeString} from './utils'
 
@@ -42,17 +44,6 @@ function declareEnums(ast: AST, options: Options, processed = new Set<AST>()): s
     case 'ENUM':
       type = generateStandaloneEnum(ast, options) + '\n'
       break
-    case 'ARRAY':
-      return declareEnums(ast.params, options, processed)
-    case 'TUPLE':
-      type = ast.params.reduce((prev, ast) => prev + declareEnums(ast, options, processed), '')
-      if (ast.spreadParam) {
-        type += declareEnums(ast.spreadParam, options, processed)
-      }
-      break
-    case 'INTERFACE':
-      type = getSuperTypesAndParams(ast).reduce((prev, ast) => prev + declareEnums(ast, options, processed), '')
-      break
     default:
       return ''
   }
@@ -76,25 +67,10 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
       type = [
         hasStandaloneName(ast) &&
           (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
-          generateStandaloneInterface(ast, options),
-        getSuperTypesAndParams(ast)
-          .map(ast => declareNamedInterfaces(ast, options, rootASTName, processed))
-          .filter(Boolean)
-          .join('\n')
+          generateStandaloneInterface(ast, options)
       ]
         .filter(Boolean)
         .join('\n')
-      break
-    case 'INTERSECTION':
-    case 'TUPLE':
-    case 'UNION':
-      type = ast.params
-        .map(_ => declareNamedInterfaces(_, options, rootASTName, processed))
-        .filter(Boolean)
-        .join('\n')
-      if (ast.type === 'TUPLE' && ast.spreadParam) {
-        type += declareNamedInterfaces(ast.spreadParam, options, rootASTName, processed)
-      }
       break
     default:
       type = ''
@@ -124,21 +100,12 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
       type = ''
       break
     case 'INTERFACE':
-      type = getSuperTypesAndParams(ast)
-        .map(
-          ast =>
-            (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
-            declareNamedTypes(ast, options, rootASTName, processed)
-        )
-        .filter(Boolean)
-        .join('\n')
+      type = ''
       break
     case 'INTERSECTION':
-      console.log(ast.standaloneName)
       type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : ''
       break
     case 'UNION':
-      console.log(ast.standaloneName)
       type = hasStandaloneName(ast) ? generateStandaloneUnion(ast) : ''
       break
     case 'TUPLE':
@@ -160,7 +127,6 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         type = generateStandaloneType(ast, options)
       }
   }
-
   return type
 }
 
@@ -288,6 +254,8 @@ function generateRawType(ast: AST, options: Options): string {
       })()
     case 'UNION':
       return generateUnionMembers(ast)
+    case 'ENUM_AS_UNION':
+      return generateEnumMembers(ast)
     case 'CUSTOM_TYPE':
       return ast.params
   }
@@ -305,7 +273,26 @@ function expectAstType(ast: AST, type: AST_TYPE) {
 /**
  * Generate a union
  */
+function generateEnumMembers(ast: TEnumAsUnion): string {
+  const members = ast.params.map(_ => {
+    expectAstType(_, 'LITERAL');
+    const literal: TLiteral = _ as TLiteral;
+    if (typeof literal.params === 'string') {
+      return `"${ literal.params } "`;
+    } else if (typeof literal.params === 'number') {
+      return `${ literal.params }`;
+    } else {
+      throw `Enum items must be of type 'string' or 'number'`;
+    }
+  });
+  return members.length === 1 ? members[0] : members.join(`|`);
+}
+
+/**
+ * Generate a union
+ */
 function generateUnionMembers(ast: TUnion): string {
+  console.log(ast.standaloneName)
   const members = ast.params.map(_ => {
     if (!hasStandaloneName(_)) {
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
@@ -438,9 +425,6 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
   return (
     (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
     `export interface ${toSafeString(ast.standaloneName)} ` +
-    (ast.superTypes.length > 0
-      ? `extends ${ast.superTypes.map(superType => toSafeString(superType.standaloneName)).join(', ')} `
-      : '') +
     wrapInterface(generateInterfaceMembers(ast, options)) +
     `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
     `${ wrapInterfaceInitialiserParams(generateInitialiserParams(ast, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
@@ -486,8 +470,4 @@ function escapeKeyName(keyName: string): string {
     return keyName
   }
   return JSON.stringify(keyName)
-}
-
-function getSuperTypesAndParams(ast: TInterface): AST[] {
-  return ast.params.map(param => param.ast).concat(ast.superTypes)
 }
