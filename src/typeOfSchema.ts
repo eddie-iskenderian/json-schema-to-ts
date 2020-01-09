@@ -1,5 +1,23 @@
 import {isPlainObject} from 'lodash'
 import {JSONSchema, SCHEMA_TYPE} from './types/JSONSchema'
+import {JSONSchema4TypeName} from 'json-schema';
+
+export function isTypeNullable(schema: JSONSchema): boolean {
+  const rawType: JSONSchema4TypeName | JSONSchema4TypeName[] | string | undefined = schema.type;
+  if (rawType && typeof rawType === 'string') {
+    const types =  rawType.split(/\s*,\s*/);
+    if (types.length === 1) {
+      return false; 
+    }
+    if (!types.includes('null')) {
+      throw `Multiple type specification of '${ rawType }' must include 'null'`;
+    } else if (types.length !== 2) {
+      throw `Multiple type specification of '${ rawType }' can only include one non-null JSON type`;
+    }
+    return true;
+  }
+  return false;
+}
 
 /**
  * Duck types a JSONSchema schema or property to determine which kind of AST node to parse it into.

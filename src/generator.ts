@@ -279,10 +279,10 @@ function generateEnumMembers(ast: TEnumAsUnion): string {
     const literal: TLiteral = _ as TLiteral;
     if (typeof literal.params === 'string') {
       return `"${ literal.params } "`;
-    } else if (typeof literal.params === 'number') {
+    } else if (typeof literal.params === 'number' || typeof literal.params === 'boolean') {
       return `${ literal.params }`;
     } else {
-      throw `Enum items must be of type 'string' or 'number'`;
+      throw `Enum items must be of type 'string', 'number' or 'boolean'`;
     }
   });
   return members.length === 1 ? members[0] : members.join(`|`);
@@ -292,7 +292,6 @@ function generateEnumMembers(ast: TEnumAsUnion): string {
  * Generate a union
  */
 function generateUnionMembers(ast: TUnion): string {
-  console.log(ast.standaloneName)
   const members = ast.params.map(_ => {
     if (!hasStandaloneName(_)) {
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
@@ -350,16 +349,16 @@ function generateInterfaceMembers(ast: TInterface, options: Options): string {
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(
-        ({isRequired, keyName, ast}) =>
-          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+        ({isRequired, keyName, ast, isNullable}) =>
+          [isRequired, keyName, ast, isNullable, generateType(ast, options)] as [boolean, string, AST, boolean, string]
       )
       .map(
-        ([isRequired, keyName, ast, type]) =>
+        ([isRequired, keyName, ast, isNullable, type]) =>
           (hasComment(ast) && !ast.standaloneName ? generateComment(ast.comment) + '\n' : '') +
           escapeKeyName(keyName) +
           (isRequired ? '' : '?') +
           ': ' +
-          (hasStandaloneName(ast) ? toSafeString(type) : type)
+          `${ (hasStandaloneName(ast) ? toSafeString(type) : type) }${ isNullable ? '| null' : '' }`
       )
       .join('\n')
   )
