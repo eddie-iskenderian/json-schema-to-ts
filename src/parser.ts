@@ -39,9 +39,8 @@ export function parse(
   processed.set(schema, ast)
   const set = (_ast: AST) => Object.assign(ast, _ast)
 
-  if (isSchema) {
-    // const nullable: boolean = patchMulityType(schema as SchemaSchema);
-    const nonLiteral: AST = parseNonLiteral(
+  return isSchema
+    ? parseNonLiteral(
       schema as SchemaSchema,
       options,
       rootSchema,
@@ -50,10 +49,7 @@ export function parse(
       set,
       processed
     )
-    return nonLiteral
-  } else {
-    return parseLiteral(schema, keyName, keyNameFromDefinition, set)
-  }
+  : parseLiteral(schema, keyName, keyNameFromDefinition, set)
 }
 
 function parseLiteral(
