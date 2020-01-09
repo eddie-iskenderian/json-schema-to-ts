@@ -1,9 +1,8 @@
-import {whiteBright} from 'cli-color'
 import {JSONSchema4Type, JSONSchema4TypeName} from 'json-schema'
 import {findKey, includes, isPlainObject, map} from 'lodash'
 import {format} from 'util'
 import {Options} from './'
-import {typeOfSchema} from './typeOfSchema'
+import {isTypeNullable, typeOfSchema} from './typeOfSchema'
 import {
   AST,
   T_ANY,
@@ -12,7 +11,6 @@ import {
   TTuple
 } from './types/AST'
 import {JSONSchema, JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
-import {log} from './utils'
 
 export type Processed = Map<JSONSchema | JSONSchema4Type, AST>
 
@@ -43,15 +41,15 @@ export function parse(
 
   return isSchema
     ? parseNonLiteral(
-        schema as SchemaSchema,
-        options,
-        rootSchema,
-        keyName,
-        keyNameFromDefinition,
-        set,
-        processed
-      )
-    : parseLiteral(schema, keyName, keyNameFromDefinition, set)
+      schema as SchemaSchema,
+      options,
+      rootSchema,
+      keyName,
+      keyNameFromDefinition,
+      set,
+      processed
+    )
+  : parseLiteral(schema, keyName, keyNameFromDefinition, set)
 }
 
 function parseLiteral(
@@ -77,8 +75,6 @@ function parseNonLiteral(
   set: (ast: AST) => AST,
   processed: Processed
 ) {
-  log(whiteBright.bgBlue('parser'), schema, '<-' + typeOfSchema(schema), processed.has(schema) ? '(FROM CACHE)' : '')
-
   switch (typeOfSchema(schema)) {
     case 'ALL_OF':
       return set({
@@ -303,8 +299,7 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     case 'CUSTOM_TYPE':
       return defaultValue === null
     case 'LITERAL':
-      return typeof defaultValue === 'boolean'
-        || typeof defaultValue === 'string'
+      return typeof defaultValue === 'string'
         || typeof defaultValue === 'number'
         || typeof defaultValue === 'boolean';
     case 'NUMBER':
@@ -340,11 +335,11 @@ function parseSchema(
     if (value.default !== undefined && !validateDefault(ast, value.default)) {
       throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
     }
-
     return {
       ast,
       isPatternProperty: false,
       isRequired: includes(schema.required || [], key),
+      isNullable: isTypeNullable(value),
       isUnreachableDefinition: false,
       keyName: key,
       default: typeof value.default === 'string' ? `'${ value.default }'` : value.default
@@ -368,6 +363,7 @@ via the \`patternProperty\` "${key}".`
           ast,
           isPatternProperty: !singlePatternProperty,
           isRequired: singlePatternProperty || includes(schema.required || [], key),
+          isNullable: isTypeNullable(schema),
           isUnreachableDefinition: false,
           keyName: singlePatternProperty ? '[k: string]' : key
         }
@@ -386,6 +382,7 @@ via the \`definition\` "${key}".`
           ast,
           isPatternProperty: false,
           isRequired: includes(schema.required || [], key),
+          isNullable: isTypeNullable(schema),
           isUnreachableDefinition: true,
           keyName: key
         }

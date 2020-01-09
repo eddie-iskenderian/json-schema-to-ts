@@ -11,6 +11,7 @@ export interface AbstractAST {
   keyName?: string
   standaloneName?: string
   type: AST_TYPE
+  nullable?: boolean
 }
 
 export type ASTWithComment = AST & { comment: string }
@@ -66,6 +67,7 @@ export interface TInterfaceParam {
   ast: AST
   keyName: string
   isRequired: boolean
+  isNullable: boolean;
   isPatternProperty: boolean
   isUnreachableDefinition: boolean
   default?: JSONSchema4Type;
