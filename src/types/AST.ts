@@ -2,7 +2,7 @@ import { JSONSchema4Type } from 'json-schema'
 
 export type AST_TYPE = AST['type']
 
-export type AST = TAny | TArray | TBoolean | TEnum | TInterface | TNamedInterface
+export type AST = TAny | TArray | TBoolean | TInterface | TNamedInterface
   | TIntersection | TLiteral | TNumber | TNull | TObject | TReference
   | TString | TTuple | TUnion | TCustomType | TEnumAsUnion
 
@@ -39,12 +39,6 @@ export interface TArray extends AbstractAST {
 
 export interface TBoolean extends AbstractAST {
   type: 'BOOLEAN'
-}
-
-export interface TEnum extends AbstractAST {
-  standaloneName: string
-  type: 'ENUM'
-  params: TEnumParam[]
 }
 
 export interface TEnumParam {

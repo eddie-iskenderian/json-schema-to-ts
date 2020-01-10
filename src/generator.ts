@@ -8,7 +8,6 @@ import {
   hasStandaloneName,
   T_ANY,
   TArray,
-  TEnum,
   TInterface,
   TIntersection,
   TNamedInterface,
@@ -24,31 +23,11 @@ export function generate(ast: AST, options = DEFAULT_OPTIONS): string {
     [
       options.bannerComment,
       declareNamedTypes(ast, options, ast.standaloneName!),
-      declareNamedInterfaces(ast, options, ast.standaloneName!),
-      declareEnums(ast, options)
+      declareNamedInterfaces(ast, options, ast.standaloneName!)
     ]
       .filter(Boolean)
       .join('\n\n') + '\n'
   ) // trailing newline
-}
-
-function declareEnums(ast: AST, options: Options, processed = new Set<AST>()): string {
-  if (processed.has(ast)) {
-    return ''
-  }
-
-  processed.add(ast)
-  let type = ''
-
-  switch (ast.type) {
-    case 'ENUM':
-      type = generateStandaloneEnum(ast, options) + '\n'
-      break
-    default:
-      return ''
-  }
-
-  return type
 }
 
 function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string, processed = new Set<AST>()): string {
@@ -95,9 +74,6 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
       ]
         .filter(Boolean)
         .join('\n')
-      break
-    case 'ENUM':
-      type = ''
       break
     case 'INTERFACE':
       type = ''
@@ -405,19 +381,6 @@ function generateInterfaceInitialiserAssignments(rootAst: TInterface): string {
 
 function generateComment(comment: string): string {
   return ['/**', ...comment.split('\n').map(_ => ' * ' + _), ' */'].join('\n')
-}
-
-function generateStandaloneEnum(ast: TEnum, options: Options): string {
-  return (
-    (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
-    'export ' +
-    (options.enableConstEnums ? 'const ' : '') +
-    `enum ${toSafeString(ast.standaloneName)} {` +
-    '\n' +
-    ast.params.map(({ast, keyName}) => keyName + ' = ' + generateType(ast, options)).join(',\n') +
-    '\n' +
-    '}'
-  )
 }
 
 function generateStandaloneInterface(ast: TNamedInterface, options: Options): string {
