@@ -114,17 +114,6 @@ function parseNonLiteral(
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'CUSTOM_TYPE'
       })
-    case 'NAMED_ENUM':
-      return set({
-        comment: schema.description,
-        keyName,
-        params: schema.enum!.map((_, n) => ({
-          ast: parse(_, options, rootSchema, undefined, false, processed),
-          keyName: schema.tsEnumNames![n]
-        })),
-        standaloneName: standaloneName(schema, keyName)!,
-        type: 'ENUM'
-      })
     case 'NAMED_SCHEMA':
       return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName))
     case 'NULL':
