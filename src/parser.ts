@@ -106,14 +106,6 @@ function parseNonLiteral(
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'BOOLEAN'
       })
-    case 'CUSTOM_TYPE':
-      return set({
-        comment: schema.description,
-        keyName,
-        params: schema.tsType!,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
-        type: 'CUSTOM_TYPE'
-      })
     case 'NAMED_SCHEMA':
       return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName))
     case 'NULL':
@@ -285,7 +277,6 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     case 'OBJECT':
     case 'REFERENCE':
     case 'UNION':
-    case 'CUSTOM_TYPE':
       return defaultValue === null
     case 'LITERAL':
       return typeof defaultValue === 'string'

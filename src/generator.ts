@@ -232,8 +232,6 @@ function generateRawType(ast: AST, options: Options): string {
       return generateUnionMembers(ast)
     case 'ENUM_AS_UNION':
       return generateEnumMembers(ast)
-    case 'CUSTOM_TYPE':
-      return ast.params
   }
 }
 
