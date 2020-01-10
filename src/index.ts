@@ -13,7 +13,7 @@ import {dereference} from './resolver'
 import {error, stripExtension, Try} from './utils'
 import {validate} from './validator'
 
-export {EnumJSONSchema, JSONSchema, NamedEnumJSONSchema, CustomTypeJSONSchema} from './types/JSONSchema'
+export {JSONSchema, CustomTypeJSONSchema} from './types/JSONSchema'
 
 export interface Options {
   /**
