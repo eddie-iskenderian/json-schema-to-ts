@@ -116,9 +116,6 @@ export function traverse(schema: JSONSchema4, callback: (schema: JSONSchema4) =>
       traverse(items, callback)
     }
   }
-  if (schema.additionalItems && typeof schema.additionalItems === 'object') {
-    traverse(schema.additionalItems, callback)
-  }
   if (schema.dependencies) {
     traverseObjectKeys(schema.dependencies, callback)
   }
