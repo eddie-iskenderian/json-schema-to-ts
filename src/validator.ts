@@ -1,7 +1,7 @@
-import {JSONSchema} from './types/JSONSchema'
+import {JSONSchema4} from 'json-schema'
 import {mapDeep} from './utils'
 
-type Rule = (schema: JSONSchema) => boolean | void
+type Rule = (schema: JSONSchema4) => boolean | void
 const rules = new Map<string, Rule>()
 
 rules.set('When both maxItems and minItems are present, maxItems >= minItems', schema => {
@@ -25,7 +25,7 @@ rules.set('When minItems exists, minItems >= 0', schema => {
   }
 })
 
-export function validate(schema: JSONSchema, filename: string): string[] {
+export function validate(schema: JSONSchema4, filename: string): string[] {
   const errors: string[] = []
   rules.forEach((rule, ruleName) => {
     mapDeep(schema, (schema, key) => {
