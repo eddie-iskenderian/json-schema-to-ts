@@ -181,13 +181,13 @@ function parseNonLiteral(
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
-    case 'UNNAMED_ENUM':
+    case 'ENUM':
       return set({
         comment: schema.description,
         keyName,
         params: schema.enum!.map(_ => parse(_, options, rootSchema, undefined, false, processed)),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
-        type: 'ENUM_AS_UNION'
+        type: 'ENUM'
       })
     case 'UNNAMED_SCHEMA':
       return set(

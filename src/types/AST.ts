@@ -111,7 +111,7 @@ export interface TUnion extends AbstractAST {
 }
 
 export interface TEnumAsUnion extends AbstractAST {
-  type: 'ENUM_AS_UNION'
+  type: 'ENUM'
   params: AST[]
 }
 

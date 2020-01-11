@@ -29,7 +29,7 @@ export function typeOfSchema(schema: JSONSchema4): SCHEMA_TYPE {
   if (Array.isArray(schema.type)) return 'UNION'
   if (schema.type === 'null') return 'NULL'
   if (schema.items) return 'TYPED_ARRAY'
-  if (schema.enum) return 'UNNAMED_ENUM'
+  if (schema.enum) return 'ENUM'
   if (schema.$ref) return 'REFERENCE'
   switch (schema.type) {
     case 'string':

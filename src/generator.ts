@@ -187,7 +187,7 @@ function generateRawType(ast: AST, options: Options): string {
       })()
     case 'UNION':
       return generateUnionMembers(ast)
-    case 'ENUM_AS_UNION':
+    case 'ENUM':
       return generateEnumMembers(ast)
   }
 }
