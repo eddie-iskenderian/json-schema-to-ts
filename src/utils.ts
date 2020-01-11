@@ -1,7 +1,7 @@
 import {whiteBright} from 'cli-color'
 import {deburr, isPlainObject, mapValues, trim, upperFirst} from 'lodash'
 import {basename, extname} from 'path'
-import {JSONSchema} from './types/JSONSchema'
+import {JSONSchema4} from 'json-schema'
 
 // TODO: pull out into a separate package
 export function Try<T>(fn: () => T, err: (e: Error) => any): T {
@@ -77,17 +77,17 @@ const BLACKLISTED_KEYS = new Set([
   'oneOf',
   'not'
 ])
-function traverseObjectKeys(obj: Record<string, JSONSchema>, callback: (schema: JSONSchema) => void) {
+function traverseObjectKeys(obj: Record<string, JSONSchema4>, callback: (schema: JSONSchema4) => void) {
   Object.keys(obj).forEach(k => {
     if (obj[k] && typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
       traverse(obj[k], callback)
     }
   })
 }
-function traverseArray(arr: JSONSchema[], callback: (schema: JSONSchema) => void) {
+function traverseArray(arr: JSONSchema4[], callback: (schema: JSONSchema4) => void) {
   arr.forEach(i => traverse(i, callback))
 }
-export function traverse(schema: JSONSchema, callback: (schema: JSONSchema) => void): void {
+export function traverse(schema: JSONSchema4, callback: (schema: JSONSchema4) => void): void {
   callback(schema)
 
   if (schema.anyOf) {
@@ -212,7 +212,7 @@ export function log(...messages: any[]) {
 /**
  * escape block comments in schema descriptions so that they don't unexpectedly close JSDoc comments in generated typescript interfaces
  */
-export function escapeBlockComment(schema: JSONSchema) {
+export function escapeBlockComment(schema: JSONSchema4) {
   const replacer = '* /'
   if (schema === null || typeof schema !== 'object') {
     return

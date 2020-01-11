@@ -1,19 +1,20 @@
 import {whiteBright} from 'cli-color'
 import stringify = require('json-stringify-safe')
 import {cloneDeep} from 'lodash'
-import {JSONSchema, JSONSchemaTypeName, NormalizedJSONSchema} from './types/JSONSchema'
+import {JSONSchemaTypeName, NormalizedJSONSchema} from './types/JSONSchema'
 import {escapeBlockComment, justName, log, toSafeString, traverse} from './utils'
+import { JSONSchema4 } from 'json-schema'
 
-type Rule = (schema: JSONSchema, rootSchema: JSONSchema, fileName?: string) => void
+type Rule = (schema: JSONSchema4, rootSchema: JSONSchema4, fileName?: string) => void
 const rules = new Map<string, Rule>()
 
-function hasType(schema: JSONSchema, type: JSONSchemaTypeName) {
+function hasType(schema: JSONSchema4, type: JSONSchemaTypeName) {
   return schema.type === type || (Array.isArray(schema.type) && schema.type.includes(type))
 }
-function isObjectType(schema: JSONSchema) {
+function isObjectType(schema: JSONSchema4) {
   return schema.properties !== undefined || hasType(schema, 'object') || hasType(schema, 'any')
 }
-function isArrayType(schema: JSONSchema) {
+function isArrayType(schema: JSONSchema4) {
   return schema.items !== undefined || hasType(schema, 'array') || hasType(schema, 'any')
 }
 
@@ -97,7 +98,7 @@ rules.set('Normalize schema.items', schema => {
   return schema
 })
 
-export function normalize(schema: JSONSchema, filename?: string): NormalizedJSONSchema {
+export function normalize(schema: JSONSchema4, filename?: string): NormalizedJSONSchema {
   const _schema = cloneDeep(schema) as NormalizedJSONSchema
   rules.forEach((rule, key) => {
     traverse(_schema, schema => rule(schema, _schema, filename))

@@ -2,13 +2,14 @@ import test from 'ava'
 import {readdirSync} from 'fs'
 import {find} from 'lodash'
 import {join} from 'path'
-import {compile, JSONSchema, Options} from '../src'
+import {JSONSchema4} from 'json-schema'
+import {compile, Options} from '../src'
 import {log, stripExtension} from '../src/utils'
 
 const dir = __dirname + '/e2e'
 
 type TestCase = {
-  input: JSONSchema
+  input: JSONSchema4
   error?: true
   exclude?: boolean
   only?: boolean

@@ -2,13 +2,13 @@ import test from 'ava'
 import {readdirSync} from 'fs'
 import {template} from 'lodash'
 import {join} from 'path'
-import {JSONSchema} from '../src'
+import {JSONSchema4} from 'json-schema'
 import {normalize} from '../src/normalizer'
 
 interface JSONTestCase {
   name: string
-  in: JSONSchema
-  out: JSONSchema
+  in: JSONSchema4
+  out: JSONSchema4
 }
 
 const normalizerDir = __dirname + '/../../test/normalizer'

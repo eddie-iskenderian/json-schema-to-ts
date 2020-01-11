@@ -1,4 +1,4 @@
-import {JSONSchema4Type, JSONSchema4TypeName} from 'json-schema'
+import {JSONSchema4, JSONSchema4Type, JSONSchema4TypeName} from 'json-schema'
 import {findKey, includes, isPlainObject, map} from 'lodash'
 import {format} from 'util'
 import {Options} from './'
@@ -10,19 +10,19 @@ import {
   TInterfaceParam,
   TTuple
 } from './types/AST'
-import {JSONSchema, JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
+import {JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
 
-export type Processed = Map<JSONSchema | JSONSchema4Type, AST>
+export type Processed = Map<JSONSchema4 | JSONSchema4Type, AST>
 
 export type UsedNames = Set<string>
 
 export function parse(
-  schema: JSONSchema | JSONSchema4Type,
+  schema: JSONSchema4 | JSONSchema4Type,
   options: Options,
-  rootSchema = schema as JSONSchema,
+  rootSchema = schema as JSONSchema4,
   keyName?: string,
   isSchema = true,
-  processed: Processed = new Map<JSONSchema | JSONSchema4Type, AST>()
+  processed: Processed = new Map<JSONSchema4 | JSONSchema4Type, AST>()
 ): AST {
   // If we've seen this node before, return it.
   if (processed.has(schema)) {
@@ -67,9 +67,9 @@ function parseLiteral(
 }
 
 function parseNonLiteral(
-  schema: JSONSchema,
+  schema: JSONSchema4,
   options: Options,
-  rootSchema: JSONSchema,
+  rootSchema: JSONSchema4,
   keyName: string | undefined,
   keyNameFromDefinition: string | undefined,
   set: (ast: AST) => AST,
@@ -105,25 +105,6 @@ function parseNonLiteral(
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'BOOLEAN'
-      })
-    case 'CUSTOM_TYPE':
-      return set({
-        comment: schema.description,
-        keyName,
-        params: schema.tsType!,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
-        type: 'CUSTOM_TYPE'
-      })
-    case 'NAMED_ENUM':
-      return set({
-        comment: schema.description,
-        keyName,
-        params: schema.enum!.map((_, n) => ({
-          ast: parse(_, options, rootSchema, undefined, false, processed),
-          keyName: schema.tsEnumNames![n]
-        })),
-        standaloneName: standaloneName(schema, keyName)!,
-        type: 'ENUM'
       })
     case 'NAMED_SCHEMA':
       return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName))
@@ -259,14 +240,14 @@ function parseNonLiteral(
 /**
  * Compute a schema name using a series of fallbacks
  */
-function standaloneName(schema: JSONSchema, keyNameFromDefinition: string | undefined) {
+function standaloneName(schema: JSONSchema4, keyNameFromDefinition: string | undefined) {
   return schema.title || schema.id || keyNameFromDefinition
 }
 
 function newInterface(
   schema: SchemaSchema,
   options: Options,
-  rootSchema: JSONSchema,
+  rootSchema: JSONSchema4,
   processed: Processed,
   keyName?: string,
   keyNameFromDefinition?: string
@@ -296,7 +277,6 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     case 'OBJECT':
     case 'REFERENCE':
     case 'UNION':
-    case 'CUSTOM_TYPE':
       return defaultValue === null
     case 'LITERAL':
       return typeof defaultValue === 'string'
@@ -319,7 +299,7 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
 function parseSchema(
   schema: SchemaSchema,
   options: Options,
-  rootSchema: JSONSchema,
+  rootSchema: JSONSchema4,
   processed: Processed,
   parentSchemaName: string
 ): TInterfaceParam[] {
@@ -392,12 +372,12 @@ via the \`definition\` "${key}".`
   return asts;
 }
 
-type Definitions = {[k: string]: JSONSchema}
+type Definitions = {[k: string]: JSONSchema4}
 
 /**
  * TODO: Memoize
  */
-function getDefinitions(schema: JSONSchema, isSchema = true, processed = new Set<JSONSchema>()): Definitions {
+function getDefinitions(schema: JSONSchema4, isSchema = true, processed = new Set<JSONSchema4>()): Definitions {
   if (processed.has(schema)) {
     return {}
   }
@@ -429,6 +409,6 @@ function getDefinitions(schema: JSONSchema, isSchema = true, processed = new Set
 /**
  * TODO: Reduce rate of false positives
  */
-function hasDefinitions(schema: JSONSchema): schema is JSONSchemaWithDefinitions {
+function hasDefinitions(schema: JSONSchema4): schema is JSONSchemaWithDefinitions {
   return 'definitions' in schema
 }

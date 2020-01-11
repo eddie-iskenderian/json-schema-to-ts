@@ -1,8 +1,8 @@
 import {isPlainObject} from 'lodash'
-import {JSONSchema, SCHEMA_TYPE} from './types/JSONSchema'
-import {JSONSchema4TypeName} from 'json-schema';
+import {SCHEMA_TYPE} from './types/JSONSchema'
+import {JSONSchema4, JSONSchema4TypeName} from 'json-schema';
 
-export function isTypeNullable(schema: JSONSchema): boolean {
+export function isTypeNullable(schema: JSONSchema4): boolean {
   const rawType: JSONSchema4TypeName | JSONSchema4TypeName[] | string | undefined = schema.type;
   if (rawType && typeof rawType === 'string') {
     const types =  rawType.split(/\s*,\s*/);
@@ -22,15 +22,13 @@ export function isTypeNullable(schema: JSONSchema): boolean {
 /**
  * Duck types a JSONSchema schema or property to determine which kind of AST node to parse it into.
  */
-export function typeOfSchema(schema: JSONSchema): SCHEMA_TYPE {
-  if (schema.tsType) return 'CUSTOM_TYPE'
+export function typeOfSchema(schema: JSONSchema4): SCHEMA_TYPE {
   if (schema.allOf) return 'ALL_OF'
   if (schema.anyOf) return 'ANY_OF'
   if (schema.oneOf) return 'ONE_OF'
   if (Array.isArray(schema.type)) return 'UNION'
   if (schema.type === 'null') return 'NULL'
   if (schema.items) return 'TYPED_ARRAY'
-  if (schema.enum && schema.tsEnumNames) return 'NAMED_ENUM'
   if (schema.enum) return 'UNNAMED_ENUM'
   if (schema.$ref) return 'REFERENCE'
   switch (schema.type) {

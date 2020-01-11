@@ -2,9 +2,9 @@ import { JSONSchema4Type } from 'json-schema'
 
 export type AST_TYPE = AST['type']
 
-export type AST = TAny | TArray | TBoolean | TEnum | TInterface | TNamedInterface
+export type AST = TAny | TArray | TBoolean | TInterface | TNamedInterface
   | TIntersection | TLiteral | TNumber | TNull | TObject | TReference
-  | TString | TTuple | TUnion | TCustomType | TEnumAsUnion
+  | TString | TTuple | TUnion | TEnumAsUnion
 
 export interface AbstractAST {
   comment?: string
@@ -39,12 +39,6 @@ export interface TArray extends AbstractAST {
 
 export interface TBoolean extends AbstractAST {
   type: 'BOOLEAN'
-}
-
-export interface TEnum extends AbstractAST {
-  standaloneName: string
-  type: 'ENUM'
-  params: TEnumParam[]
 }
 
 export interface TEnumParam {
@@ -120,11 +114,6 @@ export interface TUnion extends AbstractAST {
 export interface TEnumAsUnion extends AbstractAST {
   type: 'ENUM_AS_UNION'
   params: AST[]
-}
-
-export interface TCustomType extends AbstractAST {
-  type: 'CUSTOM_TYPE'
-  params: string
 }
 
 ////////////////////////////////////////////     literals
