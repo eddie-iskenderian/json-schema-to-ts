@@ -160,20 +160,6 @@ function parseNonLiteral(
           standaloneName: standaloneName(schema, keyNameFromDefinition),
           type: 'TUPLE'
         }
-        if (schema.additionalItems === true) {
-          arrayType.spreadParam = {
-            type: 'ANY'
-          }
-        } else if (schema.additionalItems) {
-          arrayType.spreadParam = parse(
-            schema.additionalItems,
-            options,
-            rootSchema,
-            undefined,
-            true,
-            processed
-          )
-        }
         return set(arrayType)
       } else {
         const params = parse(schema.items!, options, rootSchema, undefined, true, processed)
@@ -220,8 +206,6 @@ function parseNonLiteral(
           minItems,
           // create a tuple of length N
           params: Array(Math.max(maxItems, minItems) || 0).fill(params),
-          // if there is no maximum, then add a spread item to collect the rest
-          spreadParam: maxItems >= 0 ? undefined : params,
           standaloneName: standaloneName(schema, keyNameFromDefinition),
           type: 'TUPLE'
         })

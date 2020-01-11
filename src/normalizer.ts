@@ -82,10 +82,6 @@ rules.set('Normalize schema.items', schema => {
     const items = schema.items
     // create a tuple of length N
     const newItems = Array(maxItems || minItems || 0).fill(items)
-    if (!hasMaxItems) {
-      // if there is no maximum, then add a spread item to collect the rest
-      schema.additionalItems = items
-    }
     schema.items = newItems
   }
 

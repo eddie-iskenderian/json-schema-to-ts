@@ -34,8 +34,6 @@ async function main(argv: minimist.ParsedArgs) {
     const schemas = await readdir(argIn);
     for (const schema of schemas) {
       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
-      // Disable addtional items and properties
-      jsonSchema.additionalItems = false;
       const tsDef = await compile(jsonSchema, argIn, options);
       ts.push(tsDef);
       // Null the banner comment after the first schema type definition
