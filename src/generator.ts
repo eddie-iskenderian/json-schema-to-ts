@@ -216,7 +216,7 @@ function generateEnumMembers(ast: TEnumAsUnion): string {
       throw `Enum items must be of type 'string', 'number' or 'boolean'`;
     }
   });
-  return members.length === 1 ? members[0] : members.join(`|`);
+  return members.join(`|`);
 }
 
 /**
@@ -229,47 +229,134 @@ function generateUnionMembers(ast: TUnion): string {
     }
     return toSafeString(_.standaloneName);
   });
-  return members.length === 1 ? members[0] : members.join(`|`);
+  return members.join(`|`);
 }
 
 /**
- * Generate an intersection
+ * Generate interface members of an intersection
  */
 function generateIntersectionMembers(ast: TIntersection, options: Options): string {
-  const members = ast.params.map(_ => {
+  const members: string = generateIntersectionInterfaceMembers(ast, options);
+  const refs: string = generateIntersectionRefMembers(ast);
+
+  let result: string;
+  if (members.length > 0 && refs.length > 0) {
+    result = `${ wrapInterface(members) }\n& ${ refs }`;
+  } else if (members.length > 0) {
+    result = wrapInterface(members);
+  } else if (refs.length > 0) {
+    result = refs;
+  } else {
+    throw 'No members';
+  }
+  return result;
+}
+
+/**
+ * Generate interface members of an intersection
+ */
+function generateIntersectionInterfaceMembers(ast: TIntersection, options: Options): string {
+  const members = ast.params.filter(m => !m.standaloneName).map(_ => {
     expectAstType(_, 'INTERFACE')
     return generateInterfaceMembers(_ as TInterface, options);
   });
-  return members.length === 1 ? members[0] : members.join(`\n`);
+  return members.join(`,\n`);
 }
 
 /**
- * Generate the parameters required for the initialiser of an intersection type
+ * Generate reference members of an intersection
+ */
+function generateIntersectionRefMembers(ast: TIntersection): string {
+  const refs = ast.params.filter(m => !!m.standaloneName).map(_ => {
+    return toSafeString(_.standaloneName!);
+  })
+  return refs.join(`&`);
+}
+
+/**
+ * Generate parameters required for the initialiser of an intersection type
  */
 function generateIntersectionInitialiserParams(ast: TIntersection, options: Options): string {
-  return (
-    ast.params.map(_ => {
-      expectAstType(_, 'INTERFACE')
-      const intrface: TInterface = _ as TInterface;
-      return generateInitialiserParams(intrface, options);
-    })
-    .join(`,\n`)
-  );
+  const members: string = generateIntersectionInterfaceInitialiserParams(ast, options);
+  const refs: string = generateIntersectionRefInitialiserParams(ast);
+
+  let result: string;
+  if (members.length > 0 && refs.length > 0) {
+    result = `${ wrapInterface(members) }\n& ${ refs }`;
+  } else if (members.length > 0) {
+    result = wrapInterface(members);
+  } else if (refs.length > 0) {
+    result = refs;
+  } else {
+    throw 'No members';
+  }
+  return result;
+}
+
+/**
+ * Generate interface parameters required for the initialiser of an intersection type
+ */
+function generateIntersectionInterfaceInitialiserParams(ast: TIntersection, options: Options): string {
+  const members = ast.params.filter(m => !m.standaloneName).map(_ => {
+    expectAstType(_, 'INTERFACE')
+    const intrface: TInterface = _ as TInterface;
+    return generateInterfaceInitialiserParams(intrface, options);
+  });
+  return members.join(`,\n`);
+}
+
+/**
+ * Generate reference parameters required for the initialiser of an intersection type
+ */
+function generateIntersectionRefInitialiserParams(ast: TIntersection): string {
+  const refs = ast.params.filter(m => !!m.standaloneName).map(_ => {
+    return toSafeString(_.standaloneName!);
+  })
+  return refs.join(`&`);
 }
 
 /**
  * Generate the assignments required for the initialiser of an intersection type
  */
 function generateIntersectionInitialiserAssignments(ast: TIntersection): string {
-  return (
-    ast.params.map(_ => {
-      expectAstType(_, 'INTERFACE')
-      const intrface: TInterface = _ as TInterface;
-      return generateInterfaceInitialiserAssignments(intrface);
-    })
-    .join(`,\n`)
-  );
+  const members: string = generateIntersectionInterfaceInitialiserAssignments(ast);
+  const refs: string = generateIntersectionRefInitialiserAssignments(ast);
+
+  let result: string;
+  if (members.length > 0 && refs.length > 0) {
+    result = `Object.assign(${ wrapInterface(members) }\n,${ refs })`;
+  } else if (members.length > 0) {
+    result = wrapInterface(members);
+  } else if (refs.length > 0) {
+    result = refs;
+  } else {
+    throw 'No members';
+  }
+  return result;
 }
+
+/**
+ * Generate interface assignments required for the initialiser of an intersection type
+ */
+function generateIntersectionInterfaceInitialiserAssignments(ast: TIntersection): string {
+  const members = ast.params.filter(m => !m.standaloneName).map(_ => {
+    expectAstType(_, 'INTERFACE')
+    const intrface: TInterface = _ as TInterface;
+    return generateInterfaceInitialiserAssignments(intrface);
+  });
+  return members.join(`,\n`);
+}
+
+/**
+ * Generate reference assignments required for the initialiser of an intersection type
+ */
+function generateIntersectionRefInitialiserAssignments(ast: TIntersection): string {
+  const refs = ast.params.filter(m => !!m.standaloneName).map(_ => {
+    return `make${ toSafeString(_.standaloneName!) }(input)`;
+  })
+  return refs.join(`,`);
+}
+
 
 function wrapInterface(rendered: string) {
   return `{\n${ rendered }\n}`
@@ -299,7 +386,7 @@ function wrapInterfaceInitialiserParams(rendered: string, omitBraces: boolean = 
   return `(\ninput: ${ omitBraces ? '' : '{' }\n${ rendered }\n${ omitBraces ? '' : '}' })`;
 }
 
-function generateInitialiserParams(ast: TInterface, options: Options): string {
+function generateInterfaceInitialiserParams(ast: TInterface, options: Options): string {
   return (
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
@@ -318,8 +405,9 @@ function generateInitialiserParams(ast: TInterface, options: Options): string {
   )
 }
 
-function wrapInterfaceInitialiserAssignments(rendered: string): string {
-  return `({\n${ rendered }\n})`;
+function wrapInterfaceInitialiserAssignments(rendered: string, omitBraces: boolean = false): string {
+  const retur = `(${ omitBraces ? '' : '{' }\n${ rendered }\n${ omitBraces ? '' : '}'})`;
+  return retur;
 }
 
 function generateInterfaceInitialiserAssignments(rootAst: TInterface): string {
@@ -344,7 +432,7 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     `export interface ${toSafeString(ast.standaloneName)} ` +
     wrapInterface(generateInterfaceMembers(ast, options)) +
     `\n\nexport const make${ toSafeString(ast.standaloneName) } = ` +
-    `${ wrapInterfaceInitialiserParams(generateInitialiserParams(ast, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
+    `${ wrapInterfaceInitialiserParams(generateInterfaceInitialiserParams(ast, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
     `${ wrapInterfaceInitialiserAssignments(generateInterfaceInitialiserAssignments(ast)) };`
   )
 }
@@ -353,11 +441,11 @@ function generateStandaloneIntersection(ast: ASTWithStandaloneName, options: Opt
   const intersection: TIntersection = ast as TIntersection;
   return (
     `${ hasComment(ast) ? generateComment(ast.comment) + '\n' : '' }` +
-    `export interface ${ toSafeString(ast.standaloneName)} ${ wrapInterface(generateIntersectionMembers(intersection, options)) }` +
+    `export type ${ toSafeString(ast.standaloneName)} = ${ generateIntersectionMembers(intersection, options) }` +
     `\n\n` +
     `export const make${ toSafeString(ast.standaloneName) } = ` +
-    `${ wrapInterfaceInitialiserParams(generateIntersectionInitialiserParams(intersection, options)) }: ${ toSafeString(ast.standaloneName) } =>` +
-    `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection)) };`
+    `${ wrapInterfaceInitialiserParams(generateIntersectionInitialiserParams(intersection, options), true) }: ${ toSafeString(ast.standaloneName) } =>` +
+    `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection), true) };`
   );
 }
 
