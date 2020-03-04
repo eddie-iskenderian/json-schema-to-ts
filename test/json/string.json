@@ -1,0 +1,5 @@
+{
+  "id": "string.json",
+  "type": "string",
+  "default": "a string"
+}

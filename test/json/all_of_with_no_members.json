@@ -1,0 +1,7 @@
+
+{
+  "id": "all_of.json",
+  "type": "object",
+  "allOf": [
+  ]
+}

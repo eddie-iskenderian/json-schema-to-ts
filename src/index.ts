@@ -1,15 +1,13 @@
-import {readFileSync} from 'fs'
 import {JSONSchema4} from 'json-schema'
 import {Options as $RefOptions} from 'json-schema-ref-parser'
 import {endsWith, merge} from 'lodash'
-import {dirname} from 'path'
 import {Options as PrettierOptions} from 'prettier'
 import {format} from './formatter'
 import {generate} from './generator'
 import {normalize} from './normalizer'
 import {parse} from './parser'
 import {dereference} from './resolver'
-import {error, stripExtension, Try} from './utils'
+import {error} from './utils'
 import {validate} from './validator'
 
 export interface Options {
@@ -25,10 +23,6 @@ export interface Options {
    * Declare external schemas referenced via `$ref`?
    */
   declareExternallyReferenced: boolean
-  /**
-   * Prepend enums with [`const`](https://www.typescriptlang.org/docs/handbook/enums.html#computed-and-constant-members)?
-   */
-  enableConstEnums: boolean
   /**
    * Append all index signatures with `| undefined` so that they are strictly typed.
    *
@@ -59,7 +53,6 @@ export const DEFAULT_OPTIONS: Options = {
 */`,
   cwd: process.cwd(),
   declareExternallyReferenced: true,
-  enableConstEnums: true, // by default, avoid generating code
   strictIndexSignatures: false,
   style: {
     bracketSpacing: false,
@@ -71,22 +64,6 @@ export const DEFAULT_OPTIONS: Options = {
     useTabs: false
   },
   unreachableDefinitions: false
-}
-
-export function compileFromFile(filename: string, options: Partial<Options> = DEFAULT_OPTIONS): Promise<string> {
-  const contents = Try(
-    () => readFileSync(filename),
-    () => {
-      throw new ReferenceError(`Unable to read file "${filename}"`)
-    }
-  )
-  const schema = Try<JSONSchema4>(
-    () => JSON.parse(contents.toString()),
-    () => {
-      throw new TypeError(`Error parsing JSON in file "${filename}"`)
-    }
-  )
-  return compile(schema, stripExtension(filename), {cwd: dirname(filename), ...options})
 }
 
 export async function compile(schema: JSONSchema4, name: string, options: Partial<Options> = {}): Promise<string> {

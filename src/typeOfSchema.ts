@@ -1,4 +1,3 @@
-import {isPlainObject} from 'lodash'
 import {SCHEMA_TYPE} from './types/JSONSchema'
 import {JSONSchema4, JSONSchema4TypeName} from 'json-schema';
 
@@ -40,26 +39,12 @@ export function typeOfSchema(schema: JSONSchema4): SCHEMA_TYPE {
       return 'NUMBER'
     case 'boolean':
       return 'BOOLEAN'
-    case 'object':
-      if (!schema.properties && !isPlainObject(schema)) {
-        return 'OBJECT'
-      }
-      break
-    case 'array':
-      return 'UNTYPED_ARRAY'
-    case 'any':
-      return 'ANY'
-  }
 
-  switch (typeof schema.default) {
-    case 'boolean':
-      return 'BOOLEAN'
-    case 'number':
-      return 'NUMBER'
-    case 'string':
-      return 'STRING'
+    case 'object':
+    case undefined:
+      break;
+    default:
+      throw `'${ schema.type }' is an un supported type.`;
   }
-  if (schema.id) return 'NAMED_SCHEMA'
-  if (isPlainObject(schema) && Object.keys(schema).length) return 'UNNAMED_SCHEMA'
-  return 'ANY'
+  return 'NAMED_SCHEMA'
 }

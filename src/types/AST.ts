@@ -2,7 +2,7 @@ import { JSONSchema4Type } from 'json-schema'
 
 export type AST_TYPE = AST['type']
 
-export type AST = TAny | TArray | TBoolean | TInterface | TNamedInterface
+export type AST = TArray | TBoolean | TInterface | TNamedInterface
   | TIntersection | TLiteral | TNumber | TNull | TObject | TReference
   | TString | TTuple | TUnion | TEnumAsUnion
 
@@ -27,10 +27,6 @@ export function hasStandaloneName(ast: AST): ast is ASTWithStandaloneName {
 }
 
 ////////////////////////////////////////////     types
-
-export interface TAny extends AbstractAST {
-  type: 'ANY'
-}
 
 export interface TArray extends AbstractAST {
   type: 'ARRAY'
@@ -113,15 +109,4 @@ export interface TUnion extends AbstractAST {
 export interface TEnumAsUnion extends AbstractAST {
   type: 'ENUM'
   params: AST[]
-}
-
-////////////////////////////////////////////     literals
-
-export const T_ANY: TAny = {
-  type: 'ANY'
-}
-
-export const T_ANY_ADDITIONAL_PROPERTIES: TAny & ASTWithName = {
-  keyName: '[k: string]',
-  type: 'ANY'
 }

@@ -1,0 +1,9 @@
+{
+  "id": "name.json",
+  "type": "object",
+  "properties": {
+    "first": { "type": "string", "default": 1 },
+    "last": { "type": "string" }
+  },
+  "required": ["first", "last"]
+}

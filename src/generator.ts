@@ -120,8 +120,6 @@ function generateRawType(ast: AST, options: Options): string {
   }
 
   switch (ast.type) {
-    case 'ANY':
-      return 'any'
     case 'ARRAY':
       return (() => {
         const type = generateType(ast.params, options)
@@ -469,9 +467,6 @@ function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): s
 
 function escapeKeyName(keyName: string): string {
   if (keyName.length && /[A-Za-z_$]/.test(keyName.charAt(0)) && /^[\w$]+$/.test(keyName)) {
-    return keyName
-  }
-  if (keyName === '[k: string]') {
     return keyName
   }
   return JSON.stringify(keyName)

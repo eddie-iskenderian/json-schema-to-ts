@@ -12,10 +12,10 @@ function hasType(schema: JSONSchema4, type: JSONSchemaTypeName) {
   return schema.type === type || (Array.isArray(schema.type) && schema.type.includes(type))
 }
 function isObjectType(schema: JSONSchema4) {
-  return schema.properties !== undefined || hasType(schema, 'object') || hasType(schema, 'any')
+  return schema.properties !== undefined || hasType(schema, 'object')
 }
 function isArrayType(schema: JSONSchema4) {
-  return schema.items !== undefined || hasType(schema, 'array') || hasType(schema, 'any')
+  return schema.items !== undefined || hasType(schema, 'array')
 }
 
 rules.set('Remove `type=["null"]` if `enum=[null]`', schema => {
