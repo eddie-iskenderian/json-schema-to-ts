@@ -7,7 +7,6 @@ import {Options as PrettierOptions} from 'prettier'
 import {format} from './formatter'
 import {generate} from './generator'
 import {normalize} from './normalizer'
-import {optimize} from './optimizer'
 import {parse} from './parser'
 import {dereference} from './resolver'
 import {error, stripExtension, Try} from './utils'
@@ -105,7 +104,7 @@ export async function compile(schema: JSONSchema4, name: string, options: Partia
   }
 
   return format(
-    generate(optimize(parse(await dereference(normalize(schema, name), _options), _options)), _options),
+    generate(parse(await dereference(normalize(schema, name), _options), _options), _options),
     _options
   )
 }

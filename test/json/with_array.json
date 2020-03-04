@@ -1,0 +1,13 @@
+{
+  "id": "with_array.json",
+  "type": "object",
+  "properties": {
+    "array": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": ["array"]
+}

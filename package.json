@@ -45,7 +45,10 @@
   },
   "homepage": "https://github.com/bcherny/json-schema-to-typescript#readme",
   "dependencies": {
+    "@types/jasmine": "^3.5.0",
+    "@types/jest": "^24.0.23",
     "@types/json-schema": "^7.0.3",
+    "@types/json-stringify-safe": "^5.0.0",
     "@types/node": ">=4.5.0",
     "@types/prettier": "^1.16.1",
     "cli-color": "^1.4.0",
@@ -71,7 +74,10 @@
     "eslint": "^6.7.2",
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-prettier": "^3.1.1",
+    "jasmine": "^3.5.0",
+    "jest": "^24.9.0",
     "shx": "^0.3.2",
+    "ts-jest": "^24.2.0",
     "tsify": "^4.0.1",
     "typescript": "^3.3.3333"
   },
@@ -95,5 +101,26 @@
   },
   "browserify-shim": {
     "prettier": "global:prettier"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true,
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx",
+      "json",
+      "node"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ],
+    "collectCoverage": true,
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testMatch": [
+      "**/*.spec.ts"
+    ]
   }
 }

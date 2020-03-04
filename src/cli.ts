@@ -46,7 +46,7 @@ async function main(argv: minimist.ParsedArgs) {
   }
 }
 
-function readInput(argIn?: string) {
+function readInput(argIn?: string): Promise<string> {
   if (!argIn) {
     return new Promise(stdin)
   }

@@ -1,0 +1,9 @@
+{
+  "id": "employee.json",
+  "type": "object",
+  "properties": {
+    "role": { "type": "string", "default": "Engineer" },
+    "person": { "$ref": "person.json" }
+  },
+  "required": ["person"]
+}

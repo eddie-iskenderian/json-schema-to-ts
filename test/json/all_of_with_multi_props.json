@@ -1,0 +1,16 @@
+
+{
+  "id": "all_of_no_order.json",
+  "type": "object",
+  "allOf": [
+    {
+      "properties": {
+        "age": { "type": "number", "default": 0 }
+      }
+    }, { "$ref": "person.json" }, {
+      "properties": {
+        "hobby": { "type": "string", "default": "" }
+      }
+    }
+  ]
+}

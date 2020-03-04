@@ -1,0 +1,6 @@
+
+{
+  "id": "enum.json",
+  "type": "string",
+  "enum": ["red", "amber", "green"]
+}

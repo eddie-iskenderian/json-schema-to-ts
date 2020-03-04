@@ -1,0 +1,9 @@
+{
+  "id": "user.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": "number", "default": 0 },
+    "name": { "$ref": "name.json" }
+  },
+  "required": ["name"]
+}

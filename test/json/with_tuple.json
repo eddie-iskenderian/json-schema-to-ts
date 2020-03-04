@@ -1,0 +1,16 @@
+{
+  "id": "with_tuple.json",
+  "type": "object",
+  "properties": {
+    "tuple": {
+      "type": "tuple",
+      "items": [{
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }]
+    }
+  },
+  "required": ["tuple"]
+}

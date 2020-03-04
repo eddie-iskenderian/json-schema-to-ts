@@ -1,0 +1,6 @@
+
+{
+  "id": "mixed_enum.json",
+  "type": "string",
+  "enum": ["one", 2, "three", true, false]
+}

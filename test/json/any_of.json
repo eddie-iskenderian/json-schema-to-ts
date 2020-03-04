@@ -1,0 +1,9 @@
+
+{
+  "id": "any_of.json",
+  "type": "object",
+  "anyOf": [
+    { "$ref": "name.json" },
+    { "$ref": "person.json" }
+  ]
+}

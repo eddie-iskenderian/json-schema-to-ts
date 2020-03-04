@@ -1,0 +1,22 @@
+{
+  "id": "with_tuple_refs.json",
+  "type": "object",
+  "properties": {
+    "tuple": {
+      "type": "tuple",
+      "items": [{
+          "$ref": "user.json"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "name.json"
+        },
+        {
+          "type": "null"
+        }]
+    }
+  },
+  "required": ["tuple"]
+}

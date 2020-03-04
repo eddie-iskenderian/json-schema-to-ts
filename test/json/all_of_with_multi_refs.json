@@ -1,0 +1,14 @@
+
+{
+  "id": "all_of1.json",
+  "type": "object",
+  "allOf": [
+    {
+      "properties": {
+        "age": { "type": "number", "default": 0 }
+      }
+    },
+    { "$ref": "person.json" },
+    { "$ref": "name.json" }
+  ]
+}
