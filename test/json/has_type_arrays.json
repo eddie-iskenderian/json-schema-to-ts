@@ -1,0 +1,10 @@
+{
+  "id": "has_type_arrays.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": ["number"], "default": 0 },
+    "flag": { "type": ["boolean"], "default": false },
+    "age": { "type": ["integer", "null"], "default": 16 },
+    "name": { "type": ["object", "null"], "$ref": "name.json", "default": null }
+  }
+}

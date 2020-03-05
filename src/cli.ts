@@ -46,7 +46,7 @@ async function main(argv: minimist.ParsedArgs) {
   }
 }
 
-function readInput(argIn?: string) {
+function readInput(argIn?: string): Promise<string> {
   if (!argIn) {
     return new Promise(stdin)
   }
@@ -82,12 +82,8 @@ Boolean values can be set to false using the 'no-' prefix.
 
   --cwd=XXX
       Root directory for resolving $ref
-  --enableConstEnums
-      Prepend enums with 'const'?
   --style.XXX=YYY
       Prettier configuration
-  --unreachableDefinitions
-      Generates code for definitions that aren't referenced by the schema
 `
   )
 }

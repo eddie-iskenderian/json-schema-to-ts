@@ -1,0 +1,9 @@
+{
+  "id": "has_type_arrays_with_nulls.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": ["null", "null"] },
+    "flag": { "type": ["integer"] }
+  },
+  "required": ["flag", "id"]
+}

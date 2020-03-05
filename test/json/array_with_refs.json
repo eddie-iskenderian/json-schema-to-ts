@@ -1,0 +1,13 @@
+{
+  "id": "with_array_refs.json",
+  "type": "object",
+  "properties": {
+    "array": {
+      "type": "array",
+      "items": {
+        "$ref": "person.json"
+      }
+    }
+  },
+  "required": ["array"]
+}

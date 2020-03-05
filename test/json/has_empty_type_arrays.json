@@ -1,0 +1,9 @@
+{
+  "id": "has_empty_type_arrays.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": ["number"], "default": 0 },
+    "flag": { "type": [] }
+  },
+  "required": ["flag"]
+}

@@ -1,0 +1,9 @@
+
+{
+  "id": "one_of.json",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "all_of.json" },
+    { "$ref": "person.json" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "user.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": "number", "default": 0 },
+    "name": {
+      "oneOf": [
+        { "type": "null"},
+        { "$ref": "name.json" }
+      ]
+    },
+    "other_name": {
+      "oneOf": [
+        { "type": "null"},
+        { "$ref": "name.json" }
+      ],
+      "default": null
+    }
+  },
+  "required": ["name"]
+}

@@ -1,0 +1,8 @@
+
+{
+  "id": "unknown_schema_type.json",
+  "type": "random",
+  "properties": {
+    "age": { "type": "number", "default": 0 }
+  }
+}

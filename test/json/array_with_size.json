@@ -1,0 +1,15 @@
+{
+  "id": "with_array_size.json",
+  "type": "object",
+  "properties": {
+    "array": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 3
+    }
+  },
+  "required": ["array"]
+}

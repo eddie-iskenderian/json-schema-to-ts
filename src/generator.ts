@@ -120,8 +120,6 @@ function generateRawType(ast: AST, options: Options): string {
   }
 
   switch (ast.type) {
-    case 'ANY':
-      return 'any'
     case 'ARRAY':
       return (() => {
         const type = generateType(ast.params, options)
@@ -224,12 +222,17 @@ function generateEnumMembers(ast: TEnumAsUnion): string {
  */
 function generateUnionMembers(ast: TUnion): string {
   const members = ast.params.map(_ => {
+    if (_.type === 'NULL') {
+      return 'null';
+    }
     if (!hasStandaloneName(_)) {
+      console.log(JSON.stringify(_));
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
     }
     return toSafeString(_.standaloneName);
   });
-  return members.join(`|`);
+  // Put 'null' at the end to indicate nullable types
+  return members.sort((a, _b) => a === 'null' ? 1 : -1).join(`|`);
 }
 
 /**
@@ -391,15 +394,15 @@ function generateInterfaceInitialiserParams(ast: TInterface, options: Options): 
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(
-        ({isRequired, keyName, ast}) =>
-          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+        ({isRequired, keyName, ast, isNullable}) =>
+          [isRequired, keyName, ast, isNullable, generateType(ast, options)] as [boolean, string, AST, boolean, string]
       )
       .map(
-        ([isRequired, keyName, ast, type]) =>
+        ([isRequired, keyName, ast, isNullable, type]) =>
           escapeKeyName(keyName) +
           (isRequired ? '' : '?') +
           ': ' +
-          (hasStandaloneName(ast) ? toSafeString(type) : type)
+          `${ (hasStandaloneName(ast) ? toSafeString(type) : type) }${ isNullable ? '| null' : '' }`
       )
       .join(',\n')
   )
@@ -469,9 +472,6 @@ function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): s
 
 function escapeKeyName(keyName: string): string {
   if (keyName.length && /[A-Za-z_$]/.test(keyName.charAt(0)) && /^[\w$]+$/.test(keyName)) {
-    return keyName
-  }
-  if (keyName === '[k: string]') {
     return keyName
   }
   return JSON.stringify(keyName)
