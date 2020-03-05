@@ -1,5 +1,5 @@
 {
-  "id": "employee.json",
+  "id": "schema_with_types_and_refs.json",
   "type": "object",
   "properties": {
     "role": { "type": "string", "default": "Engineer" },

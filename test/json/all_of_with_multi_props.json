@@ -1,6 +1,6 @@
 
 {
-  "id": "all_of_no_order.json",
+  "id": "all_of_with_multi_props.json",
   "type": "object",
   "allOf": [
     {

@@ -16,7 +16,6 @@ const compareTypes = async (schema: string, expectType: string) => {
   const options = { cwd: 'test/json', declareExternallyReferenced: false, style: { printWidth: 80 } }
   const jsonSchema: JSONSchema4 = JSON.parse(readFileSync(`test/json/${ schema }`).toString());
   const typeDef = await compile(jsonSchema, 'test/json', options);
-  console.log(typeDef);
   const typescript = normaliseTypes(expectType);
   expect(normaliseTypes(typeDef)).toContain(typescript);
 };
@@ -48,17 +47,17 @@ describe('Generate Typescript types', () => {
   
   it('can generate allOf types with muliple `properties` components', async () => {
     const typescript = `
-    export type AllOfNoOrder = {
+    export type AllOfWithMultiProps = {
       age?: number;
       hobby?: string;
     } & Person;
     
-    export const makeAllOfNoOrder = (
+    export const makeAllOfWithMultiProps = (
       input: {
         age?: number;
         hobby?: string;
       } & Person
-    ): AllOfNoOrder =>
+    ): AllOfWithMultiProps =>
       Object.assign(
         {
           age: input.age === undefined ? 0 : input.age,
@@ -71,17 +70,17 @@ describe('Generate Typescript types', () => {
   
   it('can generate allOf types with multiple $ref components', async () => {
     const typescript = `
-    export type AllOf1 = {
+    export type AllOfWithMultiRefs = {
       age?: number;
     } & Person &
       Name;
     
-    export const makeAllOf1 = (
+    export const makeAllOfWithMultiRefs = (
       input: {
         age?: number;
       } & Person &
         Name
-    ): AllOf1 =>
+    ): AllOfWithMultiRefs =>
       Object.assign(
         {
           age: input.age === undefined ? 0 : input.age
@@ -111,15 +110,15 @@ describe('Generate Typescript types', () => {
   
   it('can generate types for schemas with a combo of explicit types and $refs', async () => {
     const typescript = `
-      export interface Employee {
+      export interface SchemaWithTypesAndRefs {
         role?: string;
         person: Person;
       }
       
-      export const makeEmployee = (input: {
+      export const makeSchemaWithTypesAndRefs = (input: {
         role?: string;
         person: Person;
-      }): Employee => ({
+      }): SchemaWithTypesAndRefs => ({
         role: input.role === undefined ? "Engineer" : input.role,
         person: input.person
       });`;
@@ -207,19 +206,19 @@ describe('Generate Typescript types', () => {
   
   it('can generate type with a null default', async () => {
     const typescript = `
-      export interface User {
+      export interface HasNullDefault {
         id?: number;
         flag?: boolean;
-        age?: number;
+        age?: number | null;
         name?: Name;
       }
       
-      export const makeUser = (input: {
+      export const makeHasNullDefault = (input: {
         id?: number;
         flag?: boolean;
-        age?: number;
+        age?: number | null;
         name?: Name;
-      }): User => ({
+      }): HasNullDefault => ({
         id: input.id === undefined ? 0 : input.id,
         flag: input.flag === undefined ? false : input.flag,
         age: input.age === undefined ? 16 : input.age,
@@ -228,9 +227,115 @@ describe('Generate Typescript types', () => {
     await compareTypes('has_null_default.json', typescript)
   });
 
+  it('can generate type with member types specified as arrays', async () => {
+    const typescript = `
+      export interface HasTypeArrays {
+        id?: number;
+        flag?: boolean;
+        age?: number | null;
+        name?: Name;
+      }
+      
+      export const makeHasTypeArrays = (input: {
+        id?: number;
+        flag?: boolean;
+        age?: number | null;
+        name?: Name;
+      }): HasTypeArrays => ({
+        id: input.id === undefined ? 0 : input.id,
+        flag: input.flag === undefined ? false : input.flag,
+        age: input.age === undefined ? 16 : input.age,
+        name: input.name === undefined ? null : input.name
+      });`;
+    await compareTypes('has_type_arrays.json', typescript)
+  });
+
+  it('can generate string types', async () => {
+    const typescript = `
+      export interface HasTypeArraysRefAndNulls {
+        id?: Person;
+      }
+      
+      export const makeHasTypeArraysRefAndNulls = (input: {
+        id?: Person;
+      }): HasTypeArraysRefAndNulls => ({
+        id: input.id === undefined ? null : input.id
+      });`;
+      await compareTypes('has_type_arrays_ref_and_nulls.json', typescript)
+  });
+
   it('can generate string types', async () => {
     const typescript = `export type String = string;`;
     await compareTypes('string.json', typescript)
   });
-  
+
+  it('can generate type with comments', async () => {
+    const typescript = `
+      /**
+       * A person's name.
+       */
+      export interface Name {
+        first: string;
+        last: string;
+      }
+      
+      export const makeName = (input: {first: string; last: string}): Name => ({
+        first: input.first,
+        last: input.last
+      });`;
+      await compareTypes('name_with_comment.json', typescript)
+  });
+
+  it('can fail on an unknown schema type', async () => {
+    try {
+      await compareTypes('unknown_schema_type.json', '')
+      fail('Cannot have unsupported schema types');
+    } catch (e) {
+      expect(e).toContain('is an unsupported type.');
+    }
+  });
+
+  it('can fail on an empty schema type', async () => {
+    try {
+      await compareTypes('has_empty_type_arrays.json', '')
+      fail('Cannot have an empty schema types');
+    } catch (e) {
+      expect(e).toEqual('Type arrays must have at least one element');
+    }
+  });
+
+  it('can fail on an invalid schema type', async () => {
+    try {
+      await compareTypes('has_invalid_type_arrays.json', '')
+      fail('Cannot have an invalid schema types');
+    } catch (e) {
+      expect(e).toEqual('Type arrays with more than one element must have a null item.');
+    }
+  });
+
+  it('can fail on an invalid schema type', async () => {
+    try {
+      await compareTypes('has_type_arrays_long_array.json', '')
+      fail('Cannot have an invalid schema types');
+    } catch (e) {
+      expect(e).toEqual('Array type specifiers cannot contain more than 2 types.');
+    }
+  });
+
+  it('can handle a null schema type', async () => {
+    const typescript = `
+      export interface HasTypeArraysWithNulls {
+        id: null;
+        flag: number;
+      }
+      
+      export const makeHasTypeArraysWithNulls = (input: {
+        id: null;
+        flag: number;
+      }): HasTypeArraysWithNulls => ({
+        id: input.id,
+        flag: input.flag
+      });`;
+      await compareTypes('has_type_arrays_with_nulls.json', typescript)
+  });
 });

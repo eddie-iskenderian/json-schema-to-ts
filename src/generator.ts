@@ -389,15 +389,15 @@ function generateInterfaceInitialiserParams(ast: TInterface, options: Options): 
     ast.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
       .map(
-        ({isRequired, keyName, ast}) =>
-          [isRequired, keyName, ast, generateType(ast, options)] as [boolean, string, AST, string]
+        ({isRequired, keyName, ast, isNullable}) =>
+          [isRequired, keyName, ast, isNullable, generateType(ast, options)] as [boolean, string, AST, boolean, string]
       )
       .map(
-        ([isRequired, keyName, ast, type]) =>
+        ([isRequired, keyName, ast, isNullable, type]) =>
           escapeKeyName(keyName) +
           (isRequired ? '' : '?') +
           ': ' +
-          (hasStandaloneName(ast) ? toSafeString(type) : type)
+          `${ (hasStandaloneName(ast) ? toSafeString(type) : type) }${ isNullable ? '| null' : '' }`
       )
       .join(',\n')
   )

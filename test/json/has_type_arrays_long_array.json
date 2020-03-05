@@ -1,0 +1,7 @@
+{
+  "id": "has_type_arrays_long_array.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": ["number", "integer", "object"], "default": 0 }
+  }
+}

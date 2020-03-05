@@ -1,5 +1,5 @@
 {
-  "id": "name.json",
+  "id": "name_with_not_req_but_no_default.json",
   "type": "object",
   "properties": {
     "first": { "type": "string" },

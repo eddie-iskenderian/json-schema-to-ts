@@ -1,10 +1,10 @@
 {
-  "id": "user.json",
+  "id": "has_null_default.json",
   "type": "object",
   "properties": {
     "id": { "type": "number", "default": 0 },
     "flag": { "type": "boolean", "default": false },
-    "age": { "type": "integer", "default": 16 },
-    "name": { "$ref": "name.json", "default": null }
+    "age": { "type": "integer, null", "default": 16 },
+    "name": { "type": "object, null", "$ref": "name.json", "default": null }
   }
 }

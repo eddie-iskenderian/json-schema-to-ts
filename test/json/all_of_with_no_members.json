@@ -1,6 +1,6 @@
 
 {
-  "id": "all_of.json",
+  "id": "all_of_with_no_members.json",
   "type": "object",
   "allOf": [
   ]

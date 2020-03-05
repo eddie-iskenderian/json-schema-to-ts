@@ -1,0 +1,7 @@
+{
+  "id": "has_type_arrays_ref_and_nulls.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": "object", "$ref": "person.json", "default": null }
+  }
+}

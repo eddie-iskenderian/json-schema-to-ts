@@ -1,0 +1,7 @@
+{
+  "id": "has_type_arrays_no_nulls.json",
+  "type": "object",
+  "properties": {
+    "id": { "type": ["number", "integer"], "default": 0 }
+  }
+}

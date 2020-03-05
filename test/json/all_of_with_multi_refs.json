@@ -1,6 +1,6 @@
 
 {
-  "id": "all_of1.json",
+  "id": "all_of_with_multi_refs.json",
   "type": "object",
   "allOf": [
     {

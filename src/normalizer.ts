@@ -18,6 +18,14 @@ function isArrayType(schema: JSONSchema4) {
   return schema.items !== undefined || hasType(schema, 'array')
 }
 
+rules.set('Remove `type=property` if `$ref`', schema => {
+  if (
+    !!schema.$ref && !!schema.type
+  ) {
+    schema.type = undefined;
+  }
+})
+
 rules.set('Remove `type=["null"]` if `enum=[null]`', schema => {
   if (
     Array.isArray(schema.enum) &&

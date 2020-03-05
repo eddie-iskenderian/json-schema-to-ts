@@ -1,0 +1,7 @@
+{
+  "id": "has_null_default.json",
+  "type": "object",
+  "allOf": [
+    { "$ref": "person.json", "default": null }
+  ]
+}
