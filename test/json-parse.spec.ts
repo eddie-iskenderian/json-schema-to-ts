@@ -338,4 +338,24 @@ describe('Generate Typescript types', () => {
       });`;
       await compareTypes('has_type_arrays_with_nulls.json', typescript)
   });
+
+  it('can generate a nullable ref', async () => {
+    const typescript = `
+      export interface User {
+        id?: number;
+        name: Name | null;
+        other_name?: Name | null;
+      }
+      
+      export const makeUser = (input: {
+        id?: number;
+        name: Name | null;
+        other_name?: Name | null;
+      }): User => ({
+        id: input.id === undefined ? 0 : input.id,
+        name: input.name,
+        other_name: input.other_name === undefined ? null : input.other_name
+      });`;
+    await compareTypes('user_with_nullable_ref.json', typescript)
+  });
 });

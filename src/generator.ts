@@ -222,12 +222,17 @@ function generateEnumMembers(ast: TEnumAsUnion): string {
  */
 function generateUnionMembers(ast: TUnion): string {
   const members = ast.params.map(_ => {
+    if (_.type === 'NULL') {
+      return 'null';
+    }
     if (!hasStandaloneName(_)) {
+      console.log(JSON.stringify(_));
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
     }
     return toSafeString(_.standaloneName);
   });
-  return members.join(`|`);
+  // Put 'null' at the end to indicate nullable types
+  return members.sort((a, _b) => a === 'null' ? 1 : -1).join(`|`);
 }
 
 /**
