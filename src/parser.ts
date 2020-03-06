@@ -266,7 +266,7 @@ function parseSchema(
       ast,
       isPatternProperty: false,
       isRequired: includes(schema.required || [], key),
-      isNullable: isTypeNullable(value),
+      isNullable: isTypeNullable(value) || value.nullable,
       isUnreachableDefinition: false,
       keyName: key,
       default: typeof value.default === 'string' ? `'${ value.default }'` : value.default

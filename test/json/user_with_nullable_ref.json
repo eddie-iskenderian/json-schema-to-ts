@@ -10,10 +10,8 @@
       ]
     },
     "other_name": {
-      "oneOf": [
-        { "type": "null"},
-        { "$ref": "name.json" }
-      ],
+      "$ref": "name.json",
+      "nullable": true,
       "default": null
     }
   },
