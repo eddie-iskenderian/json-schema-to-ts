@@ -13,7 +13,8 @@ import {
   TUnion,
   AST_TYPE,
   TEnumAsUnion,
-  TLiteral
+  TLiteral,
+  hasInternalStandaloneName
 } from './types/AST'
 import {log, toSafeString} from './utils'
 
@@ -75,14 +76,17 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         .join('\n')
       break
     case 'INTERFACE':
-      type = ''
+      type = hasStandaloneName(ast) ? generateStandaloneInterface(ast, options) : '';
       break
     case 'INTERSECTION':
-      type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : ''
+      type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : '';
       break
     case 'UNION':
-      type = hasStandaloneName(ast) ? generateStandaloneUnion(ast) : ''
-      break
+      type = hasStandaloneName(ast) ?
+        generateUnionChildren(ast, options, rootASTName) + `\n` +
+        generateStandaloneUnion(ast) :
+        ''
+      return type;
     case 'TUPLE':
       type = [
         hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
@@ -200,14 +204,24 @@ function expectAstType(ast: AST, type: AST_TYPE) {
 }
 
 /**
- * Generate a union
+ * Generate the definitions of each child of the union that has not been
+ * explicitly declared.
+ */
+function generateUnionChildren(ast: TUnion, options: Options, rootASTName: string): string {
+  return ast.params.map(_ => {
+    return hasInternalStandaloneName(_) ? declareNamedTypes(_, options, rootASTName) + '\n': '';
+  }).filter(t => !!t).join(`\n`)
+}
+
+/**
+ * Generate an enum
  */
 function generateEnumMembers(ast: TEnumAsUnion): string {
   const members = ast.params.map(_ => {
     expectAstType(_, 'LITERAL');
     const literal: TLiteral = _ as TLiteral;
     if (typeof literal.params === 'string') {
-      return `"${ literal.params } "`;
+      return `"${ literal.params }"`;
     } else if (typeof literal.params === 'number' || typeof literal.params === 'boolean') {
       return `${ literal.params }`;
     } else {
@@ -226,7 +240,6 @@ function generateUnionMembers(ast: TUnion): string {
       return 'null';
     }
     if (!hasStandaloneName(_)) {
-      console.log(JSON.stringify(_));
       throw `'AnyOf' and 'OneOf' entities can only reference named interfaces.`
     }
     return toSafeString(_.standaloneName);
@@ -456,7 +469,7 @@ function generateStandaloneUnion(ast: ASTWithStandaloneName): string {
   const union: TUnion = ast as TUnion;
   return (
     `${ hasComment(ast) ? generateComment(ast.comment) + '\n' : '' }` +
-    `export type ${ toSafeString(ast.standaloneName)} = ${ generateUnionMembers(union) };\n`
+    `export type ${ toSafeString(ast.standaloneName)} = ${ generateUnionMembers(union) };\n\n`
   );
 }
 
@@ -466,7 +479,7 @@ function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): s
     `export type ${toSafeString(ast.standaloneName)} = ${generateType(
       omit<AST>(ast, 'standaloneName') as AST /* TODO */,
       options
-    )}`
+    )};`
   )
 }
 

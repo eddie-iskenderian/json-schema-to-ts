@@ -173,14 +173,19 @@ function parseNonLiteral(
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
-    case 'ENUM':
+    case 'ENUM': {
+      let name: string = standaloneName(schema, keyNameFromDefinition);
+      if (rootSchema.oneOf || rootSchema.anyOf) {
+        name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ schema.enum!.join('_') }`;
+      }
       return set({
         comment: schema.description,
         keyName,
         params: schema.enum!.map(_ => parse(_, options, rootSchema, undefined, false, processed)),
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: name,
         type: 'ENUM'
       })
+    }
     case 'UNNAMED_SCHEMA':
       return set(
         newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName, keyNameFromDefinition)
@@ -191,8 +196,8 @@ function parseNonLiteral(
 /**
  * Compute a schema name using a series of fallbacks
  */
-function standaloneName(schema: JSONSchema4, keyNameFromDefinition: string | undefined) {
-  return schema.title || schema.id || keyNameFromDefinition
+function standaloneName(schema: JSONSchema4, keyNameFromDefinition: string | undefined): string {
+  return schema.title || schema.id || keyNameFromDefinition || '';
 }
 
 function newInterface(
@@ -203,7 +208,23 @@ function newInterface(
   keyName?: string,
   keyNameFromDefinition?: string
 ): TInterface {
-  const name = standaloneName(schema, keyNameFromDefinition)!
+  let name = standaloneName(schema, keyNameFromDefinition);
+  if (!name) {
+    if (rootSchema.oneOf || rootSchema.anyOf) {
+      if (Object.keys(schema.properties).length !== 1) {
+        throw `Objects within a oneOf or anyOf definition can only have one property.`
+      }
+      // Implicitly defined objects in anyOf or oneOf definitions do not support defaults, i.e. the field
+      // is required. So if required is set and reset the required field. This is to make the process 
+      // transparent.
+      if (schema.required && schema.required.length > 0) {
+        throw `Default values cannot be set for objects within a oneOf or anyOf definition.`
+      }
+      const key: string = Object.keys(schema.properties)[0];
+      schema.required = [key];
+      name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
+    }
+  }
   return {
     comment: schema.description,
     keyName,
