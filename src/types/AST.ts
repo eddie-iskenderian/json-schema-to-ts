@@ -26,6 +26,10 @@ export function hasStandaloneName(ast: AST): ast is ASTWithStandaloneName {
   return 'standaloneName' in ast && ast.standaloneName != null && ast.standaloneName !== ''
 }
 
+export function hasInternalStandaloneName(ast: AST): ast is ASTWithStandaloneName {
+  return 'standaloneName' in ast && ast.standaloneName != null && ast.standaloneName !== '' && !ast.standaloneName.includes('.json');
+}
+
 ////////////////////////////////////////////     types
 
 export interface TArray extends AbstractAST {

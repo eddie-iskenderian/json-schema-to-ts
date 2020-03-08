@@ -1,0 +1,14 @@
+
+{
+  "id": "compound_any_of.json",
+  "type": "object",
+  "anyOf": [
+    { "type": "string", "enum": ["blue", "turquoise", "aquamarine"] },
+    {
+      "properties": {
+        "custom": { "type": "string" }
+      }
+    },
+    { "$ref": "enum.json" }
+  ]
+}

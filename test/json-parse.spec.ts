@@ -126,12 +126,12 @@ describe('Generate Typescript types', () => {
   });
   
   it('can generate enum types', async () => {
-    const typescript = `export type Enum = "red " | "amber " | "green ";`;
+    const typescript = `export type Enum = "red" | "amber" | "green";`;
     await compareTypes('enum.json', typescript)
   });
   
   it('can generate enum with mixed types', async () => {
-    const typescript = `export type MixedEnum = "one " | 2 | "three " | true | false;`;
+    const typescript = `export type MixedEnum = "one" | 2 | "three" | true | false;`;
     await compareTypes('mixed_enum.json', typescript)
   });
   
@@ -357,5 +357,29 @@ describe('Generate Typescript types', () => {
         other_name: input.other_name === undefined ? null : input.other_name
       });`;
     await compareTypes('user_with_nullable_ref.json', typescript)
+  });
+
+  it('can generate an explicite compound anyOf', async () => {
+    const typescript = `
+        export type CompoundAnyOfInternalBlueTurquoiseAquamarine =
+        | "blue"
+        | "turquoise"
+        | "aquamarine";
+  
+      export interface CompoundAnyOfInternalCustom {
+        custom: string;
+      }
+  
+      export const makeCompoundAnyOfInternalCustom = (input: {
+        custom: string;
+      }): CompoundAnyOfInternalCustom => ({
+        custom: input.custom
+      });
+  
+      export type CompoundAnyOf =
+        | CompoundAnyOfInternalBlueTurquoiseAquamarine
+        | CompoundAnyOfInternalCustom
+        | Enum;`;
+    await compareTypes('compound_any_of.json', typescript)
   });
 });
