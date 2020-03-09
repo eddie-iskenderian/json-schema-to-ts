@@ -16,7 +16,6 @@ const compareTypes = async (schema: string, expectType: string) => {
   const options = { cwd: 'test/json', declareExternallyReferenced: false, style: { printWidth: 80 } }
   const jsonSchema: JSONSchema4 = JSON.parse(readFileSync(`test/json/${ schema }`).toString());
   const typeDef = await compile(jsonSchema, 'test/json', options);
-  console.log(typeDef)
   const typescript = normaliseTypes(expectType);
   expect(normaliseTypes(typeDef)).toContain(typescript);
 };
@@ -254,11 +253,11 @@ describe('Generate Typescript types', () => {
   it('can generate string types', async () => {
     const typescript = `
       export interface HasTypeArraysRefAndNulls {
-        id?: Person;
+        id?: Person | null;
       }
       
       export const makeHasTypeArraysRefAndNulls = (input: {
-        id?: Person;
+        id?: Person | null;
       }): HasTypeArraysRefAndNulls => ({
         id: input.id === undefined ? null : input.id
       });`;
@@ -323,7 +322,7 @@ describe('Generate Typescript types', () => {
     }
   });
 
-  fit('can handle a null schema type', async () => {
+  it('can handle a null schema type', async () => {
     const typescript = `
       export interface HasTypeArraysWithNulls {
         id: null;
