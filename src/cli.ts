@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import {whiteBright} from 'cli-color'
 import {JSONSchema4} from 'json-schema'
 import minimist = require('minimist')
 import {readdir, readFile, writeFile} from 'mz/fs'
@@ -43,6 +42,7 @@ async function main(argv: minimist.ParsedArgs) {
     }
     await writeOutput(ts.join(`\n`), argOut);
   } catch (e) {
+    console.log(JSON.stringify(e, null, 2));
     process.exit(1)
   }
 }
@@ -52,6 +52,7 @@ async function readInput(argIn: string): Promise<string> {
 }
 
 async function writeOutput(ts: string, argOut: string): Promise<void> {
+  console.log(argOut, ts);
   if (!argOut) {
     try {
       process.stdout.write(ts)

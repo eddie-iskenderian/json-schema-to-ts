@@ -88,7 +88,15 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.anyOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+        params: schema.anyOf!.map(_ => {
+          if (_.properties) {
+            const keys = Object.keys(_.properties);
+            if (keys.length > 0) {
+              _.required = [keys[0]];
+            }
+          }
+          return parse(_, options, rootSchema, undefined, true, processed);
+        }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
@@ -126,7 +134,15 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.oneOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+        params: schema.oneOf!.map(_ => {
+          if (_.properties) {
+            const keys = Object.keys(_.properties);
+            if (keys.length > 0) {
+              _.required = [keys[0]];
+            }
+          }
+          return parse(_, options, rootSchema, undefined, true, processed);
+        }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
@@ -215,12 +231,6 @@ function newInterface(
       if (Object.keys(schema.properties).length !== 1) {
         throw `Objects within a oneOf or anyOf definition can only have one property.`
       }
-      // Implicitly defined objects in anyOf or oneOf definitions do not support defaults, i.e. the field
-      // is required. So if required is set and reset the required field. This is to make the process 
-      // transparent.
-      if (schema.required && schema.required.length > 0) {
-        throw `Default values cannot be set for objects within a oneOf or anyOf definition.`
-      }
       const key: string = Object.keys(schema.properties)[0];
       schema.required = [key];
       name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
@@ -276,6 +286,7 @@ function parseSchema(
   let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => {
     const required: boolean = includes(schema.required || [], key);
 
+    console.log(JSON.stringify(schema, null, 2))
     if (!required && value.default === undefined) {
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
