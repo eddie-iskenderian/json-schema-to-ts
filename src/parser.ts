@@ -7,7 +7,8 @@ import {
   AST,
   TInterface,
   TInterfaceParam,
-  TTuple
+  TTuple,
+  hasStandaloneName
 } from './types/AST'
 import {JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
 
@@ -87,7 +88,15 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.anyOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+        params: schema.anyOf!.map(_ => {
+          if (_.properties) {
+            const keys = Object.keys(_.properties);
+            if (keys.length > 0) {
+              _.required = [keys[0]];
+            }
+          }
+          return parse(_, options, rootSchema, undefined, true, processed);
+        }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
@@ -125,7 +134,15 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.oneOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+        params: schema.oneOf!.map(_ => {
+          if (_.properties) {
+            const keys = Object.keys(_.properties);
+            if (keys.length > 0) {
+              _.required = [keys[0]];
+            }
+          }
+          return parse(_, options, rootSchema, undefined, true, processed);
+        }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
       })
@@ -214,12 +231,6 @@ function newInterface(
       if (Object.keys(schema.properties).length !== 1) {
         throw `Objects within a oneOf or anyOf definition can only have one property.`
       }
-      // Implicitly defined objects in anyOf or oneOf definitions do not support defaults, i.e. the field
-      // is required. So if required is set and reset the required field. This is to make the process 
-      // transparent.
-      if (schema.required && schema.required.length > 0) {
-        throw `Default values cannot be set for objects within a oneOf or anyOf definition.`
-      }
       const key: string = Object.keys(schema.properties)[0];
       schema.required = [key];
       name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
@@ -279,15 +290,18 @@ function parseSchema(
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
 
-    const ast: AST = parse(value, options, rootSchema, key, true, processed);  
-    if (value.default !== undefined && !validateDefault(ast, value.default)) {
+    const ast: AST = parse(value, options, rootSchema, key, true, processed);
+    const nullable: boolean = value.nullable || isTypeNullable(value);
+    if (value.default === null && !nullable && !hasStandaloneName(ast)) {
+      throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.` 
+    } else if (!nullable && value.default !== undefined && !validateDefault(ast, value.default)) {
       throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
     }
     return {
       ast,
       isPatternProperty: false,
-      isRequired: includes(schema.required || [], key),
-      isNullable: isTypeNullable(value) || value.nullable,
+      isRequired: required,
+      isNullable: nullable,
       isUnreachableDefinition: false,
       keyName: key,
       default: typeof value.default === 'string' ? `'${ value.default }'` : value.default

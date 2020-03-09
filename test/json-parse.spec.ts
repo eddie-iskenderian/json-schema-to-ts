@@ -253,11 +253,11 @@ describe('Generate Typescript types', () => {
   it('can generate string types', async () => {
     const typescript = `
       export interface HasTypeArraysRefAndNulls {
-        id?: Person;
+        id?: Person | null;
       }
       
       export const makeHasTypeArraysRefAndNulls = (input: {
-        id?: Person;
+        id?: Person | null;
       }): HasTypeArraysRefAndNulls => ({
         id: input.id === undefined ? null : input.id
       });`;

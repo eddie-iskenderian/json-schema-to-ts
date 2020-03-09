@@ -76,7 +76,7 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         .join('\n')
       break
     case 'INTERFACE':
-      type = hasStandaloneName(ast) ? generateStandaloneInterface(ast, options) : '';
+      type = hasStandaloneName(ast) && ast.standaloneName !== rootASTName ? generateStandaloneInterface(ast, options) : '';
       break
     case 'INTERSECTION':
       type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : '';
@@ -388,7 +388,7 @@ function generateInterfaceMembers(ast: TInterface, options: Options): string {
       )
       .map(
         ([isRequired, keyName, ast, isNullable, type]) =>
-          (hasComment(ast) && !ast.standaloneName ? generateComment(ast.comment) + '\n' : '') +
+          (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
           escapeKeyName(keyName) +
           (isRequired ? '' : '?') +
           ': ' +
