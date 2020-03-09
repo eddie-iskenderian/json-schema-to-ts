@@ -43,6 +43,10 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
       type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed)
       break
     case 'INTERFACE':
+      console.log('What about here');
+      console.log('hasStandaloneName(ast)', hasStandaloneName(ast));
+      console.log('(ast.standaloneName === rootASTName || options.declareExternallyReferenced)', (ast.standaloneName === rootASTName || options.declareExternallyReferenced));
+      console.log('WAH', JSON.stringify(ast, null, 2));
       type = [
         hasStandaloneName(ast) &&
           (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
@@ -76,7 +80,11 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
         .join('\n')
       break
     case 'INTERFACE':
-      type = hasStandaloneName(ast) ? generateStandaloneInterface(ast, options) : '';
+      console.log('Try here');
+      console.log('hasStandaloneName(ast)', hasStandaloneName(ast));
+      console.log('(ast.standaloneName === rootASTName || options.declareExternallyReferenced)', (ast.standaloneName === rootASTName || options.declareExternallyReferenced));
+      console.log('TH', JSON.stringify(ast, null, 2));
+      type = hasStandaloneName(ast) && ast.standaloneName !== rootASTName ? generateStandaloneInterface(ast, options) : '';
       break
     case 'INTERSECTION':
       type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : '';

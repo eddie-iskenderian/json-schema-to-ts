@@ -323,7 +323,7 @@ describe('Generate Typescript types', () => {
     }
   });
 
-  it('can handle a null schema type', async () => {
+  fit('can handle a null schema type', async () => {
     const typescript = `
       export interface HasTypeArraysWithNulls {
         id: null;
