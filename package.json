@@ -58,7 +58,8 @@
     "minimist": "^1.2.0",
     "mz": "^2.7.0",
     "prettier": "^1.19.1",
-    "stdin": "0.0.1"
+    "stdin": "0.0.1",
+    "ts-node": "^8.6.2"
   },
   "devDependencies": {
     "@types/cli-color": "^0.3.29",

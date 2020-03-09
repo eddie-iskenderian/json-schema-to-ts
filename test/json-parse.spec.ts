@@ -16,6 +16,7 @@ const compareTypes = async (schema: string, expectType: string) => {
   const options = { cwd: 'test/json', declareExternallyReferenced: false, style: { printWidth: 80 } }
   const jsonSchema: JSONSchema4 = JSON.parse(readFileSync(`test/json/${ schema }`).toString());
   const typeDef = await compile(jsonSchema, 'test/json', options);
+  console.log(typeDef)
   const typescript = normaliseTypes(expectType);
   expect(normaliseTypes(typeDef)).toContain(typescript);
 };

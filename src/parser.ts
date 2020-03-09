@@ -7,7 +7,8 @@ import {
   AST,
   TInterface,
   TInterfaceParam,
-  TTuple
+  TTuple,
+  hasStandaloneName
 } from './types/AST'
 import {JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
 
@@ -279,15 +280,19 @@ function parseSchema(
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
 
-    const ast: AST = parse(value, options, rootSchema, key, true, processed);  
-    if (value.default !== undefined && !validateDefault(ast, value.default)) {
+    const ast: AST = parse(value, options, rootSchema, key, true, processed);
+    const nullable: boolean = value.nullable || isTypeNullable(value);
+    if (value.default === null && !nullable && !hasStandaloneName(ast)) {
+      console.log('By', JSON.stringify(value, null, 2));
+      throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.` 
+    } else if (!nullable && value.default !== undefined && !validateDefault(ast, value.default)) {
       throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
     }
     return {
       ast,
       isPatternProperty: false,
-      isRequired: includes(schema.required || [], key),
-      isNullable: isTypeNullable(value) || value.nullable,
+      isRequired: required,
+      isNullable: nullable,
       isUnreachableDefinition: false,
       keyName: key,
       default: typeof value.default === 'string' ? `'${ value.default }'` : value.default

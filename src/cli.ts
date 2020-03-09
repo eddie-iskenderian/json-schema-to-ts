@@ -5,7 +5,6 @@ import {JSONSchema4} from 'json-schema'
 import minimist = require('minimist')
 import {readdir, readFile, writeFile} from 'mz/fs'
 import {resolve} from 'path'
-import stdin = require('stdin')
 import * as _ from 'lodash';
 import {compile, Options} from './index'
 
@@ -25,12 +24,15 @@ async function main(argv: minimist.ParsedArgs) {
     process.exit(0)
   }
 
-  const argIn: string = argv._[0] || argv.input
+  const argIn: string = argv._[0] || argv.input;
   const argOut: string = argv._[1] || argv.output
+  if (!argIn || !argOut) {
+    process.exit(1)
+  }
 
   try {
-    const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false, style: { printWidth: 80 } });
-    const ts: string[] = [];
+    const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false, style: { printWidth: 80 }, cwd: argIn });
+    const ts: string[] = []
     const schemas = await readdir(argIn);
     for (const schema of schemas) {
       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
@@ -41,19 +43,15 @@ async function main(argv: minimist.ParsedArgs) {
     }
     await writeOutput(ts.join(`\n`), argOut);
   } catch (e) {
-    console.error(whiteBright.bgRedBright('error'), e)
     process.exit(1)
   }
 }
 
-function readInput(argIn?: string): Promise<string> {
-  if (!argIn) {
-    return new Promise(stdin)
-  }
-  return readFile(resolve(process.cwd(), argIn), 'utf-8')
+async function readInput(argIn: string): Promise<string> {
+  return await readFile(resolve(process.cwd(), argIn), 'utf-8')
 }
 
-function writeOutput(ts: string, argOut: string): Promise<void> {
+async function writeOutput(ts: string, argOut: string): Promise<void> {
   if (!argOut) {
     try {
       process.stdout.write(ts)
