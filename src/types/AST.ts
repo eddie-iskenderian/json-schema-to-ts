@@ -1,29 +1,29 @@
-import { JSONSchema4Type } from 'json-schema'
+import { JSONSchema4Type } from 'json-schema';
 
-export type AST_TYPE = AST['type']
+export type AST_TYPE = AST['type'];
 
 export type AST = TArray | TBoolean | TInterface | TNamedInterface
   | TIntersection | TLiteral | TNumber | TNull | TObject | TReference
-  | TString | TTuple | TUnion | TEnumAsUnion
+  | TString | TTuple | TUnion | TEnumAsUnion;
 
 export interface AbstractAST {
-  comment?: string
-  keyName?: string
-  standaloneName?: string
-  type: AST_TYPE
-  nullable?: boolean
+  comment?: string;
+  keyName?: string;
+  standaloneName?: string;
+  type: AST_TYPE;
+  nullable?: boolean;
 }
 
-export type ASTWithComment = AST & { comment: string }
-export type ASTWithName = AST & { keyName: string }
-export type ASTWithStandaloneName = AST & { standaloneName: string }
+export type ASTWithComment = AST & { comment: string };
+export type ASTWithName = AST & { keyName: string };
+export type ASTWithStandaloneName = AST & { standaloneName: string };
 
 export function hasComment(ast: AST): ast is ASTWithComment {
-  return 'comment' in ast && ast.comment != null && ast.comment !== ''
+  return 'comment' in ast && ast.comment != null && ast.comment !== '';
 }
 
 export function hasStandaloneName(ast: AST): ast is ASTWithStandaloneName {
-  return 'standaloneName' in ast && ast.standaloneName != null && ast.standaloneName !== ''
+  return 'standaloneName' in ast && ast.standaloneName != null && ast.standaloneName !== '';
 }
 
 export function hasInternalStandaloneName(ast: AST): ast is ASTWithStandaloneName {
@@ -33,84 +33,84 @@ export function hasInternalStandaloneName(ast: AST): ast is ASTWithStandaloneNam
 ////////////////////////////////////////////     types
 
 export interface TArray extends AbstractAST {
-  type: 'ARRAY'
-  params: AST
+  type: 'ARRAY';
+  params: AST;
 }
 
 export interface TBoolean extends AbstractAST {
-  type: 'BOOLEAN'
+  type: 'BOOLEAN';
 }
 
 export interface TEnumParam {
-  ast: AST
-  keyName: string
+  ast: AST;
+  keyName: string;
 }
 
 export interface TInterface extends AbstractAST {
-  type: 'INTERFACE'
-  params: TInterfaceParam[]
+  type: 'INTERFACE';
+  params: TInterfaceParam[];
 }
 
 export interface TNamedInterface extends AbstractAST {
-  standaloneName: string
-  type: 'INTERFACE'
-  params: TInterfaceParam[]
+  standaloneName: string;
+  type: 'INTERFACE';
+  params: TInterfaceParam[];
 }
 
 export interface TInterfaceParam {
-  ast: AST
-  keyName: string
-  isRequired: boolean
+  ast: AST;
+  keyName: string;
+  isRequired: boolean;
   isNullable: boolean;
-  isPatternProperty: boolean
-  isUnreachableDefinition: boolean
+  isPatternProperty: boolean;
+  isUnreachableDefinition: boolean;
   default?: JSONSchema4Type;
 }
 
 export interface TIntersection extends AbstractAST {
-  type: 'INTERSECTION'
-  params: AST[]
+  type: 'INTERSECTION';
+  params: AST[];
 }
 
 export interface TLiteral extends AbstractAST {
-  params: JSONSchema4Type
-  type: 'LITERAL'
+  params: JSONSchema4Type;
+  type: 'LITERAL';
 }
 
 export interface TNumber extends AbstractAST {
-  type: 'NUMBER'
+  type: 'NUMBER';
 }
 
 export interface TNull extends AbstractAST {
-  type: 'NULL'
+  type: 'NULL';
 }
 
 export interface TObject extends AbstractAST {
-  type: 'OBJECT'
+  type: 'OBJECT';
 }
 
 export interface TReference extends AbstractAST {
-  type: 'REFERENCE'
-  params: string
+  type: 'REFERENCE';
+  params: string;
 }
 
 export interface TString extends AbstractAST {
-  type: 'STRING'
+  type: 'STRING';
 }
 
 export interface TTuple extends AbstractAST {
-  type: 'TUPLE'
-  params: AST[]
-  minItems: number
-  maxItems?: number
+  type: 'TUPLE';
+  params: AST[];
+  minItems: number;
+  maxItems?: number;
 }
 
 export interface TUnion extends AbstractAST {
-  type: 'UNION'
-  params: AST[]
+  type: 'UNION';
+  params: AST[];
 }
 
 export interface TEnumAsUnion extends AbstractAST {
-  type: 'ENUM'
-  params: AST[]
+  type: 'ENUM';
+  params: AST[];
 }
