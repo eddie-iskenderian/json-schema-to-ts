@@ -35,22 +35,18 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
   }
   processed.add(ast);
 
-  let type = '';
   switch (ast.type) {
     case 'ARRAY':
-      type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed);
-      break;
+      return declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed);
     case 'INTERFACE':
-      type = [
+      return [
         hasStandaloneName(ast) && ast.standaloneName === rootASTName && generateStandaloneInterface(ast, options)
       ]
         .filter(Boolean)
         .join('\n');
-      break;
     default:
-      type = '';
+      return '';
   }
-  return type;
 }
 
 function declareNamedTypes(ast: AST, options: Options, rootASTName: string, processed: Set<AST> = new Set<AST>()): string {
@@ -59,30 +55,25 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
   }
   processed.add(ast);
 
-  let type = '';
   switch (ast.type) {
     case 'ARRAY':
-      type = [
+      return [
         declareNamedTypes(ast.params, options, rootASTName, processed),
         hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined
       ]
         .filter(Boolean)
         .join('\n');
-      break;
     case 'INTERFACE':
-      type = hasStandaloneName(ast) && ast.standaloneName !== rootASTName ? generateStandaloneInterface(ast, options) : '';
-      break;
+      return hasStandaloneName(ast) && ast.standaloneName !== rootASTName ? generateStandaloneInterface(ast, options) : '';
     case 'INTERSECTION':
-      type = hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : '';
-      break;
+      return hasStandaloneName(ast) ? generateStandaloneIntersection(ast, options) : '';
     case 'UNION':
-      type = hasStandaloneName(ast) ?
+      return hasStandaloneName(ast) ?
         generateUnionChildren(ast, options, rootASTName) + `\n` +
         generateStandaloneUnion(ast) :
         '';
-      return type;
     case 'TUPLE':
-      type = [
+      return [
         hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
         ast.params
           .map(param => declareNamedTypes(param, options, rootASTName, processed))
@@ -91,13 +82,9 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
       ]
         .filter(Boolean)
         .join('\n');
-      break;
     default:
-      if (hasStandaloneName(ast)) {
-        type = generateStandaloneType(ast, options);
-      }
+      return hasStandaloneName(ast) ? generateStandaloneType(ast, options) : '';
   }
-  return type;
 }
 
 function generateType(ast: AST, options: Options): string {
@@ -111,10 +98,8 @@ function generateRawType(ast: AST, options: Options): string {
 
   switch (ast.type) {
     case 'ARRAY':
-      return (() => {
-        const type = generateType(ast.params, options);
-        return type.endsWith('"') ? '(' + type + ')[]' : type + '[]';
-      })();
+      const type = generateType(ast.params, options);
+      return type.endsWith('"') ? '(' + type + ')[]' : type + '[]';
     case 'BOOLEAN':
       return 'boolean';
     case 'INTERFACE':
@@ -135,16 +120,12 @@ function generateRawType(ast: AST, options: Options): string {
     case 'STRING':
       return 'string';
     case 'TUPLE':
-      return (() => {
+    {
         const minItems = ast.minItems;
-
         const astParams = [...ast.params];
-
-        function paramsToString(params: string[]): string {
-          return '[' + params.join(', ') + ']';
-        }
-
         const paramsList = astParams.map(param => generateType(param, options));
+
+        const paramsToString = (params: string[]): string => '[' + params.join(', ') + ']';
 
         if (minItems >= paramsList.length) {
           throw 'Min tupple length must be smaller than the number items defined';
@@ -155,7 +136,6 @@ function generateRawType(ast: AST, options: Options): string {
         // union of tuples
         // type B = [string] | [string, string] | [string, string, string]
         // const b: B = ['a', undefined, 'c'] // TS error
-
         const cumulativeParamsList: string[] = paramsList.slice(0, minItems);
         const typesToUnion: string[] = [];
 
@@ -168,11 +148,10 @@ function generateRawType(ast: AST, options: Options): string {
         }
         for (let i = minItems; i < paramsList.length; i += 1) {
           cumulativeParamsList.push(paramsList[i]);
-
           typesToUnion.push(paramsToString(cumulativeParamsList));
         }
         return typesToUnion.join('|');
-      })();
+    }
     case 'UNION':
       return generateUnionMembers(ast);
     case 'ENUM':
