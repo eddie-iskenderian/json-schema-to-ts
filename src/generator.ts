@@ -1,4 +1,3 @@
-import { whiteBright } from 'cli-color';
 import { omit } from 'lodash';
 import { DEFAULT_OPTIONS, Options } from './index';
 import {
@@ -16,7 +15,7 @@ import {
   TLiteral,
   hasInternalStandaloneName
 } from './types/AST';
-import { log, toSafeString } from './utils';
+import { toSafeString } from './utils';
 
 export function generate(ast: AST, options: Options = DEFAULT_OPTIONS): string {
   return (
@@ -34,19 +33,16 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
   if (processed.has(ast)) {
     return '';
   }
-
   processed.add(ast);
-  let type = '';
 
+  let type = '';
   switch (ast.type) {
     case 'ARRAY':
       type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed);
       break;
     case 'INTERFACE':
       type = [
-        hasStandaloneName(ast) &&
-          (ast.standaloneName === rootASTName || options.declareExternallyReferenced) &&
-          generateStandaloneInterface(ast, options)
+        hasStandaloneName(ast) && ast.standaloneName === rootASTName && generateStandaloneInterface(ast, options)
       ]
         .filter(Boolean)
         .join('\n');
@@ -54,7 +50,6 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
     default:
       type = '';
   }
-
   return type;
 }
 
@@ -62,10 +57,9 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
   if (processed.has(ast)) {
     return '';
   }
-
   processed.add(ast);
-  let type = '';
 
+  let type = '';
   switch (ast.type) {
     case 'ARRAY':
       type = [
@@ -107,18 +101,10 @@ function declareNamedTypes(ast: AST, options: Options, rootASTName: string, proc
 }
 
 function generateType(ast: AST, options: Options): string {
-  const type = generateRawType(ast, options);
-
-  if (options.strictIndexSignatures && ast.keyName === '[k: string]') {
-    return `${type} | undefined`;
-  }
-
-  return type;
+  return generateRawType(ast, options);
 }
 
 function generateRawType(ast: AST, options: Options): string {
-  log(whiteBright.bgMagenta('generator'), ast);
-
   if (hasStandaloneName(ast)) {
     return toSafeString(ast.standaloneName);
   }

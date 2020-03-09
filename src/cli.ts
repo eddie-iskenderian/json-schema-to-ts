@@ -26,13 +26,16 @@ async function main(argv: minimist.ParsedArgs) {
     const options: Partial<Options> = _.extend(argv, { declareExternallyReferenced: false, style: { printWidth: 80 }, cwd: argIn });
     const ts: string[] = [];
     const schemas = await readdir(argIn);
+    // Generate typescript for all of the JSON schemas in the input directory.
     for (const schema of schemas) {
       const jsonSchema: JSONSchema4 = JSON.parse(await readInput(`${ argIn }/${ schema }`));
+      // Generate the typescript
       const tsDef = await compile(jsonSchema, argIn, options);
       ts.push(tsDef);
-      // Null the banner comment after the first schema type definition
+      // Null the banner comment after the first schema type definition.
       options.bannerComment = '';
     }
+    // Write the accumulated typescript definitions to a typescript file.
     await writeFile(argOut, ts.join(`\n`));
   } catch (e) {
     console.error(JSON.stringify(e, null, 2));

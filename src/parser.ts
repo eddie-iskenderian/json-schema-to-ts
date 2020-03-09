@@ -1,5 +1,5 @@
 import { JSONSchema4, JSONSchema4Type, JSONSchema4TypeName } from 'json-schema';
-import { findKey, includes, isPlainObject, map } from 'lodash';
+import { includes, map } from 'lodash';
 import { format } from 'util';
 import { Options } from './';
 import { isTypeNullable, typeOfSchema } from './typeOfSchema';
@@ -10,7 +10,7 @@ import {
   TTuple,
   hasStandaloneName
 } from './types/AST';
-import { JSONSchemaWithDefinitions, SchemaSchema } from './types/JSONSchema';
+import { SchemaSchema } from './types/JSONSchema';
 
 export type Processed = Map<JSONSchema4 | JSONSchema4Type, AST>;
 
@@ -29,9 +29,6 @@ export function parse(
     return processed.get(schema)!;
   }
 
-  const definitions = getDefinitions(rootSchema);
-  const keyNameFromDefinition = findKey(definitions, _ => _ === schema);
-
   // Cache processed ASTs before they are actually computed, then update
   // them in place using set(). This is to avoid cycles.
   // TODO: Investigate alternative approaches (lazy-computing nodes, etc.)
@@ -45,23 +42,20 @@ export function parse(
       options,
       rootSchema,
       keyName,
-      keyNameFromDefinition,
       set,
       processed
     )
-  : parseLiteral(schema, keyName, keyNameFromDefinition, set);
+  : parseLiteral(schema, keyName, set);
 }
 
 function parseLiteral(
   schema: JSONSchema4Type,
   keyName: string | undefined,
-  keyNameFromDefinition: string | undefined,
   set: (ast: AST) => AST
 ) {
   return set({
     keyName,
     params: schema,
-    standaloneName: keyNameFromDefinition,
     type: 'LITERAL'
   });
 }
@@ -71,7 +65,6 @@ function parseNonLiteral(
   options: Options,
   rootSchema: JSONSchema4,
   keyName: string | undefined,
-  keyNameFromDefinition: string | undefined,
   set: (ast: AST) => AST,
   processed: Processed
 ) {
@@ -81,7 +74,7 @@ function parseNonLiteral(
         comment: schema.description,
         keyName,
         params: schema.allOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'INTERSECTION'
       });
     case 'ANY_OF':
@@ -97,14 +90,14 @@ function parseNonLiteral(
           }
           return parse(_, options, rootSchema, undefined, true, processed);
         }),
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'UNION'
       });
     case 'BOOLEAN':
       return set({
         comment: schema.description,
         keyName,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'BOOLEAN'
       });
     case 'NAMED_SCHEMA':
@@ -113,21 +106,21 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'NULL'
       });
     case 'NUMBER':
       return set({
         comment: schema.description,
         keyName,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'NUMBER'
       });
     case 'OBJECT':
       return set({
         comment: schema.description,
         keyName,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'OBJECT'
       });
     case 'ONE_OF':
@@ -143,7 +136,7 @@ function parseNonLiteral(
           }
           return parse(_, options, rootSchema, undefined, true, processed);
         }),
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'UNION'
       });
     case 'REFERENCE':
@@ -152,7 +145,7 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'STRING'
       });
     case 'TYPED_ARRAY':
@@ -166,7 +159,7 @@ function parseNonLiteral(
           maxItems,
           minItems,
           params: schema.items.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
-          standaloneName: standaloneName(schema, keyNameFromDefinition),
+          standaloneName: standaloneName(schema),
           type: 'TUPLE'
         };
         return set(arrayType);
@@ -176,7 +169,7 @@ function parseNonLiteral(
           comment: schema.description,
           keyName,
           params,
-          standaloneName: standaloneName(schema, keyNameFromDefinition),
+          standaloneName: standaloneName(schema),
           type: 'ARRAY'
         });
       }
@@ -187,13 +180,13 @@ function parseNonLiteral(
         params: (schema.type as JSONSchema4TypeName[]).map(_ =>
           parse({...schema, type: _}, options, rootSchema, undefined, true, processed)
         ),
-        standaloneName: standaloneName(schema, keyNameFromDefinition),
+        standaloneName: standaloneName(schema),
         type: 'UNION'
       });
     case 'ENUM': {
-      let name: string = standaloneName(schema, keyNameFromDefinition);
+      let name: string = standaloneName(schema);
       if (rootSchema.oneOf || rootSchema.anyOf) {
-        name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ schema.enum!.join('_') }`;
+        name = name || `${ standaloneName(rootSchema).replace('.json', '') }_internal_${ schema.enum!.join('_') }`;
       }
       return set({
         comment: schema.description,
@@ -205,7 +198,7 @@ function parseNonLiteral(
     }
     case 'UNNAMED_SCHEMA':
       return set(
-        newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName, keyNameFromDefinition)
+        newInterface(schema as SchemaSchema, options, rootSchema, processed)
       );
     default:
       throw 'Unknown schema';
@@ -215,8 +208,8 @@ function parseNonLiteral(
 /**
  * Compute a schema name using a series of fallbacks
  */
-function standaloneName(schema: JSONSchema4, keyNameFromDefinition: string | undefined): string {
-  return schema.title || schema.id || keyNameFromDefinition || '';
+function standaloneName(schema: JSONSchema4): string {
+  return schema.title || schema.id || '';
 }
 
 function newInterface(
@@ -224,10 +217,9 @@ function newInterface(
   options: Options,
   rootSchema: JSONSchema4,
   processed: Processed,
-  keyName?: string,
-  keyNameFromDefinition?: string
+  keyName?: string
 ): TInterface {
-  let name = standaloneName(schema, keyNameFromDefinition);
+  let name = standaloneName(schema);
   if (!name) {
     if (rootSchema.oneOf || rootSchema.anyOf) {
       if (Object.keys(schema.properties).length !== 1) {
@@ -235,7 +227,7 @@ function newInterface(
       }
       const key: string = Object.keys(schema.properties)[0];
       schema.required = [key];
-      name = `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
+      name = `${ standaloneName(rootSchema).replace('.json', '') }_internal_${ key }`;
     }
   }
   return {
@@ -274,7 +266,6 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     default:
       throw `Unknown AST type.`;
   }
-  return false;
 }
 
 /**
@@ -312,45 +303,4 @@ function parseSchema(
     };
   });
   return asts;
-}
-
-type Definitions = {[k: string]: JSONSchema4};
-
-/**
- * TODO: Memoize
- */
-function getDefinitions(schema: JSONSchema4, isSchema: boolean = true, processed: Set<JSONSchema4> = new Set<JSONSchema4>()): Definitions {
-  if (processed.has(schema)) {
-    return {};
-  }
-  processed.add(schema);
-  if (Array.isArray(schema)) {
-    return schema.reduce(
-      (prev, cur) => ({
-        ...prev,
-        ...getDefinitions(cur, false, processed)
-      }),
-      {}
-    );
-  }
-  if (isPlainObject(schema)) {
-    return {
-      ...(isSchema && hasDefinitions(schema) ? schema.definitions : {}),
-      ...Object.keys(schema).reduce<Definitions>(
-        (prev, cur) => ({
-          ...prev,
-          ...getDefinitions(schema[cur], false, processed)
-        }),
-        {}
-      )
-    };
-  }
-  return {};
-}
-
-/**
- * TODO: Reduce rate of false positives
- */
-function hasDefinitions(schema: JSONSchema4): schema is JSONSchemaWithDefinitions {
-  return 'definitions' in schema;
 }

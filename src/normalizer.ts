@@ -1,8 +1,7 @@
-import { whiteBright } from 'cli-color';
 import stringify = require('json-stringify-safe');
 import { cloneDeep } from 'lodash';
 import { JSONSchemaTypeName, NormalizedJSONSchema } from './types/JSONSchema';
-import { escapeBlockComment, justName, log, toSafeString, traverse } from './utils';
+import { escapeBlockComment, justName, toSafeString, traverse } from './utils';
 import { JSONSchema4 } from 'json-schema';
 
 type Rule = (schema: JSONSchema4, rootSchema: JSONSchema4, fileName?: string) => void;
@@ -102,9 +101,8 @@ rules.set('Normalize schema.items', schema => {
 
 export function normalize(schema: JSONSchema4, filename?: string): NormalizedJSONSchema {
   const _schema = cloneDeep(schema) as NormalizedJSONSchema;
-  rules.forEach((rule, key) => {
+  rules.forEach((rule, _key) => {
     traverse(_schema, s => rule(s, _schema, filename));
-    log(whiteBright.bgYellow('normalizer'), `Applied rule: "${key}"`);
   });
   return _schema;
 }
