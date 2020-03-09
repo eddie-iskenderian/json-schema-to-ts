@@ -1,43 +1,43 @@
-import {JSONSchema4, JSONSchema4Type, JSONSchema4TypeName} from 'json-schema'
-import {findKey, includes, isPlainObject, map} from 'lodash'
-import {format} from 'util'
-import {Options} from './'
-import {isTypeNullable, typeOfSchema} from './typeOfSchema'
+import { JSONSchema4, JSONSchema4Type, JSONSchema4TypeName } from 'json-schema';
+import { findKey, includes, isPlainObject, map } from 'lodash';
+import { format } from 'util';
+import { Options } from './';
+import { isTypeNullable, typeOfSchema } from './typeOfSchema';
 import {
   AST,
   TInterface,
   TInterfaceParam,
   TTuple,
   hasStandaloneName
-} from './types/AST'
-import {JSONSchemaWithDefinitions, SchemaSchema} from './types/JSONSchema'
+} from './types/AST';
+import { JSONSchemaWithDefinitions, SchemaSchema } from './types/JSONSchema';
 
-export type Processed = Map<JSONSchema4 | JSONSchema4Type, AST>
+export type Processed = Map<JSONSchema4 | JSONSchema4Type, AST>;
 
-export type UsedNames = Set<string>
+export type UsedNames = Set<string>;
 
 export function parse(
   schema: JSONSchema4 | JSONSchema4Type,
   options: Options,
-  rootSchema = schema as JSONSchema4,
+  rootSchema: JSONSchema4 = schema as JSONSchema4,
   keyName?: string,
-  isSchema = true,
+  isSchema: boolean = true,
   processed: Processed = new Map<JSONSchema4 | JSONSchema4Type, AST>()
 ): AST {
   // If we've seen this node before, return it.
   if (processed.has(schema)) {
-    return processed.get(schema)!
+    return processed.get(schema)!;
   }
 
-  const definitions = getDefinitions(rootSchema)
-  const keyNameFromDefinition = findKey(definitions, _ => _ === schema)
+  const definitions = getDefinitions(rootSchema);
+  const keyNameFromDefinition = findKey(definitions, _ => _ === schema);
 
   // Cache processed ASTs before they are actually computed, then update
   // them in place using set(). This is to avoid cycles.
   // TODO: Investigate alternative approaches (lazy-computing nodes, etc.)
-  const ast = {} as AST
-  processed.set(schema, ast)
-  const set = (_ast: AST) => Object.assign(ast, _ast)
+  const ast = {} as AST;
+  processed.set(schema, ast);
+  const set = (_ast: AST) => Object.assign(ast, _ast);
 
   return isSchema
     ? parseNonLiteral(
@@ -49,7 +49,7 @@ export function parse(
       set,
       processed
     )
-  : parseLiteral(schema, keyName, keyNameFromDefinition, set)
+  : parseLiteral(schema, keyName, keyNameFromDefinition, set);
 }
 
 function parseLiteral(
@@ -63,7 +63,7 @@ function parseLiteral(
     params: schema,
     standaloneName: keyNameFromDefinition,
     type: 'LITERAL'
-  })
+  });
 }
 
 function parseNonLiteral(
@@ -83,7 +83,7 @@ function parseNonLiteral(
         params: schema.allOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'INTERSECTION'
-      })
+      });
     case 'ANY_OF':
       return set({
         comment: schema.description,
@@ -92,44 +92,44 @@ function parseNonLiteral(
           if (_.properties) {
             const keys = Object.keys(_.properties);
             if (keys.length > 0) {
-              _.required = [keys[0]];
+              _.required = _.required || [keys[0]];
             }
           }
           return parse(_, options, rootSchema, undefined, true, processed);
         }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
-      })
+      });
     case 'BOOLEAN':
       return set({
         comment: schema.description,
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'BOOLEAN'
-      })
+      });
     case 'NAMED_SCHEMA':
-      return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName))
+      return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName));
     case 'NULL':
       return set({
         comment: schema.description,
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'NULL'
-      })
+      });
     case 'NUMBER':
       return set({
         comment: schema.description,
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'NUMBER'
-      })
+      });
     case 'OBJECT':
       return set({
         comment: schema.description,
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'OBJECT'
-      })
+      });
     case 'ONE_OF':
       return set({
         comment: schema.description,
@@ -138,28 +138,28 @@ function parseNonLiteral(
           if (_.properties) {
             const keys = Object.keys(_.properties);
             if (keys.length > 0) {
-              _.required = [keys[0]];
+              _.required = _.required || [keys[0]];
             }
           }
           return parse(_, options, rootSchema, undefined, true, processed);
         }),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
-      })
+      });
     case 'REFERENCE':
-      throw Error(format('Refs should have been resolved by the resolver!', schema))
+      throw Error(format('Refs should have been resolved by the resolver!', schema));
     case 'STRING':
       return set({
         comment: schema.description,
         keyName,
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'STRING'
-      })
+      });
     case 'TYPED_ARRAY':
       if (Array.isArray(schema.items)) {
         // normalised to not be undefined
-        const minItems = schema.minItems!
-        const maxItems = schema.maxItems!
+        const minItems = schema.minItems!;
+        const maxItems = schema.maxItems!;
         const arrayType: TTuple = {
           comment: schema.description,
           keyName,
@@ -168,17 +168,17 @@ function parseNonLiteral(
           params: schema.items.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
           standaloneName: standaloneName(schema, keyNameFromDefinition),
           type: 'TUPLE'
-        }
-        return set(arrayType)
+        };
+        return set(arrayType);
       } else {
-        const params = parse(schema.items!, options, rootSchema, undefined, true, processed)
+        const params = parse(schema.items!, options, rootSchema, undefined, true, processed);
         return set({
           comment: schema.description,
           keyName,
           params,
           standaloneName: standaloneName(schema, keyNameFromDefinition),
           type: 'ARRAY'
-        })
+        });
       }
     case 'UNION':
       return set({
@@ -189,7 +189,7 @@ function parseNonLiteral(
         ),
         standaloneName: standaloneName(schema, keyNameFromDefinition),
         type: 'UNION'
-      })
+      });
     case 'ENUM': {
       let name: string = standaloneName(schema, keyNameFromDefinition);
       if (rootSchema.oneOf || rootSchema.anyOf) {
@@ -201,12 +201,14 @@ function parseNonLiteral(
         params: schema.enum!.map(_ => parse(_, options, rootSchema, undefined, false, processed)),
         standaloneName: name,
         type: 'ENUM'
-      })
+      });
     }
     case 'UNNAMED_SCHEMA':
       return set(
         newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName, keyNameFromDefinition)
-      )
+      );
+    default:
+      throw 'Unknown schema';
   }
 }
 
@@ -229,11 +231,11 @@ function newInterface(
   if (!name) {
     if (rootSchema.oneOf || rootSchema.anyOf) {
       if (Object.keys(schema.properties).length !== 1) {
-        throw `Objects within a oneOf or anyOf definition can only have one property.`
+        throw `Objects within a oneOf or anyOf definition can only have one property.`;
       }
       const key: string = Object.keys(schema.properties)[0];
       schema.required = [key];
-      name = name || `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
+      name = `${ standaloneName(rootSchema, '').replace('.json', '') }_internal_${ key }`;
     }
   }
   return {
@@ -242,7 +244,7 @@ function newInterface(
     params: parseSchema(schema, options, rootSchema, processed),
     standaloneName: name,
     type: 'INTERFACE'
-  }
+  };
 }
 
 // Validates the provided response given the type of an AST
@@ -250,7 +252,7 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
   switch (ast.type) {
     case 'ARRAY':
     case 'TUPLE':
-      return Array.isArray(defaultValue) && defaultValue.length == 0;
+      return Array.isArray(defaultValue) && defaultValue.length === 0;
     case 'BOOLEAN':
       return typeof defaultValue === 'boolean';
     case 'INTERFACE':
@@ -258,7 +260,7 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     case 'OBJECT':
     case 'REFERENCE':
     case 'UNION':
-      return defaultValue === null
+      return defaultValue === null;
     case 'LITERAL':
       return typeof defaultValue === 'string'
         || typeof defaultValue === 'number'
@@ -266,9 +268,11 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
     case 'NUMBER':
       return typeof defaultValue === 'number';
     case 'NULL':
-      return defaultValue === null
+      return defaultValue === null;
     case 'STRING':
       return typeof defaultValue === 'string';
+    default:
+      throw `Unknown AST type.`;
   }
   return false;
 }
@@ -293,9 +297,9 @@ function parseSchema(
     const ast: AST = parse(value, options, rootSchema, key, true, processed);
     const nullable: boolean = value.nullable || isTypeNullable(value);
     if (value.default === null && !nullable && !hasStandaloneName(ast)) {
-      throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.` 
+      throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.`;
     } else if (!nullable && value.default !== undefined && !validateDefault(ast, value.default)) {
-      throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`
+      throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`;
     }
     return {
       ast,
@@ -305,21 +309,21 @@ function parseSchema(
       isUnreachableDefinition: false,
       keyName: key,
       default: typeof value.default === 'string' ? `'${ value.default }'` : value.default
-    }
+    };
   });
   return asts;
 }
 
-type Definitions = {[k: string]: JSONSchema4}
+type Definitions = {[k: string]: JSONSchema4};
 
 /**
  * TODO: Memoize
  */
-function getDefinitions(schema: JSONSchema4, isSchema = true, processed = new Set<JSONSchema4>()): Definitions {
+function getDefinitions(schema: JSONSchema4, isSchema: boolean = true, processed: Set<JSONSchema4> = new Set<JSONSchema4>()): Definitions {
   if (processed.has(schema)) {
-    return {}
+    return {};
   }
-  processed.add(schema)
+  processed.add(schema);
   if (Array.isArray(schema)) {
     return schema.reduce(
       (prev, cur) => ({
@@ -327,7 +331,7 @@ function getDefinitions(schema: JSONSchema4, isSchema = true, processed = new Se
         ...getDefinitions(cur, false, processed)
       }),
       {}
-    )
+    );
   }
   if (isPlainObject(schema)) {
     return {
@@ -339,14 +343,14 @@ function getDefinitions(schema: JSONSchema4, isSchema = true, processed = new Se
         }),
         {}
       )
-    }
+    };
   }
-  return {}
+  return {};
 }
 
 /**
  * TODO: Reduce rate of false positives
  */
 function hasDefinitions(schema: JSONSchema4): schema is JSONSchemaWithDefinitions {
-  return 'definitions' in schema
+  return 'definitions' in schema;
 }

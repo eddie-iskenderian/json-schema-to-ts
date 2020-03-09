@@ -1,46 +1,46 @@
-import {JSONSchema4} from 'json-schema'
-import {Options as $RefOptions} from 'json-schema-ref-parser'
-import {endsWith, merge} from 'lodash'
-import {Options as PrettierOptions} from 'prettier'
-import {format} from './formatter'
-import {generate} from './generator'
-import {normalize} from './normalizer'
-import {parse} from './parser'
-import {dereference} from './resolver'
-import {error} from './utils'
-import {validate} from './validator'
+import { JSONSchema4 } from 'json-schema';
+import { Options as $RefOptions } from 'json-schema-ref-parser';
+import { endsWith, merge } from 'lodash';
+import { Options as PrettierOptions } from 'prettier';
+import { format } from './formatter';
+import { generate } from './generator';
+import { normalize } from './normalizer';
+import { parse } from './parser';
+import { dereference } from './resolver';
+import { error } from './utils';
+import { validate } from './validator';
 
 export interface Options {
   /**
    * Disclaimer comment prepended to the top of each generated file.
    */
-  bannerComment: string
+  bannerComment: string;
   /**
    * Root directory for resolving [`$ref`](https://tools.ietf.org/id/draft-pbryan-zyp-json-ref-03.html)s.
    */
-  cwd: string
+  cwd: string;
   /**
    * Declare external schemas referenced via `$ref`?
    */
-  declareExternallyReferenced: boolean
+  declareExternallyReferenced: boolean;
   /**
    * Append all index signatures with `| undefined` so that they are strictly typed.
    *
    * This is required to be compatible with `strictNullChecks`.
    */
-  strictIndexSignatures: boolean
+  strictIndexSignatures: boolean;
   /**
    * A [Prettier](https://prettier.io/docs/en/options.html) configuration.
    */
-  style: PrettierOptions
+  style: PrettierOptions;
   /**
    * Generate code for `definitions` that aren't referenced by the schema?
    */
-  unreachableDefinitions: boolean
+  unreachableDefinitions: boolean;
   /**
    * [$RefParser](https://github.com/BigstickCarpet/json-schema-ref-parser) Options, used when resolving `$ref`s
    */
-  $refOptions: $RefOptions
+  $refOptions: $RefOptions;
 }
 
 export const DEFAULT_OPTIONS: Options = {
@@ -63,26 +63,26 @@ export const DEFAULT_OPTIONS: Options = {
     useTabs: false
   },
   unreachableDefinitions: false
-}
+};
 
 export async function compile(schema: JSONSchema4, name: string, options: Partial<Options> = {}): Promise<string> {
-  const _options = merge({}, DEFAULT_OPTIONS, options)
+  const _options = merge({}, DEFAULT_OPTIONS, options);
 
-  const errors = validate(schema, name)
+  const errors = validate(schema, name);
   if (errors.length) {
-    errors.forEach(_ => error(_))
-    throw new ValidationError()
+    errors.forEach(_ => error(_));
+    throw new ValidationError();
   }
 
   // normalize options
   if (!endsWith(_options.cwd, '/')) {
-    _options.cwd += '/'
+    _options.cwd += '/';
   }
 
   return format(
     generate(parse(await dereference(normalize(schema, name), _options), _options), _options),
     _options
-  )
+  );
 }
 
 export class ValidationError extends Error {}
