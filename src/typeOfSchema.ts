@@ -39,12 +39,24 @@ export function extractType(schemaType: string|undefined) {
  */
 export function typeOfSchema(schema: JSONSchema4): SCHEMA_TYPE {
   // Extract the type from the schema element.
-  if (schema.allOf) { return 'ALL_OF'; }
-  if (schema.anyOf) { return 'ANY_OF'; }
-  if (schema.oneOf) { return 'ONE_OF'; }
-  if (schema.$ref) { return 'REFERENCE'; }
-  if (schema.items) { return 'TYPED_ARRAY'; }
-  if (schema.enum) { return 'ENUM'; }
+  if (schema.allOf) {
+    return 'ALL_OF';
+  }
+  if (schema.anyOf) {
+    return 'ANY_OF';
+  }
+  if (schema.oneOf) {
+    return 'ONE_OF';
+  }
+  if (schema.$ref) {
+    return 'REFERENCE';
+  }
+  if (schema.items) {
+    return 'TYPED_ARRAY';
+  }
+  if (schema.enum) {
+    return 'ENUM';
+  }
 
   // Extract the type from the explicit JSON schema type.
   let schemaType: string[]|string|undefined = schema.type;
@@ -63,7 +75,9 @@ export function typeOfSchema(schema: JSONSchema4): SCHEMA_TYPE {
     // Process the schema type as a string
     schemaType = typeInArray[0];
   }
-  if (schemaType === 'null') { return 'NULL'; }
+  if (schemaType === 'null') {
+    return 'NULL';
+  }
 
   switch (extractType(schemaType)) {
     case 'string':

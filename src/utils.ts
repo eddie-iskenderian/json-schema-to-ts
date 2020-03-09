@@ -1,37 +1,31 @@
-import { whiteBright } from 'cli-color';
 import { deburr, isPlainObject, mapValues, trim, upperFirst } from 'lodash';
 import { basename, extname } from 'path';
 import { JSONSchema4 } from 'json-schema';
-
-// TODO: pull out into a separate package
-export function Try<T>(fn: () => T, err: (e: Error) => any): T {
-  try {
-    return fn();
-  } catch (e) {
-    return err(e as Error);
-  }
-}
 
 /**
  * Depth-first traversal
  */
 export function dft<T, U>(object: {[k: string]: any}, cb: (value: U, key: string) => T): void {
   for (const key in object) {
-    if (!object.hasOwnProperty(key)) { continue }
-    if (isPlainObject(object[key])) { dft(object[key], cb) }
+    if (!object.hasOwnProperty(key)) {
+      continue;
+    }
+    if (isPlainObject(object[key])) {
+      dft(object[key], cb);
+    }
     cb(object[key], key);
   }
 }
 
 export function mapDeep(object: object, fn: (value: object, key?: string) => object, key?: string): object {
   return fn(
-    mapValues(object, (_: unknown, key) => {
+    mapValues(object, (_: unknown, k) => {
       if (isPlainObject(_)) {
-        return mapDeep(_ as object, fn, key);
+        return mapDeep(_ as object, fn, k);
       } else if (Array.isArray(_)) {
         return _.map(item => {
           if (isPlainObject(item)) {
-            return mapDeep(item as object, fn, key);
+            return mapDeep(item as object, fn, k);
           }
           return item;
         });
@@ -140,7 +134,7 @@ export function traverse(schema: JSONSchema4, callback: (schema: JSONSchema4) =>
 /**
  * Eg. `foo/bar/baz.json` => `baz`
  */
-export function justName(filename = ''): string {
+export function justName(filename: string = ''): string {
   return stripExtension(basename(filename));
 }
 
@@ -157,14 +151,14 @@ export function stripExtension(filename: string): string {
  */
 export function toSafeString(str: string) {
   // Trim the file extension
-  const string = str.split('.')[0] || str;
+  const tmpStr: string = str.split('.')[0] || str;
   // identifiers in javaScript/ts:
   // First character: a-zA-Z | _ | $
   // Rest: a-zA-Z | _ | $ | 0-9
 
   return upperFirst(
     // remove accents, umlauts, ... by their basic latin letters
-    deburr(string)
+    deburr(tmpStr)
       // replace chars which are not valid for typescript identifiers with whitespace
       .replace(/(^\s*[^a-zA-Z_$])|([^a-zA-Z_$\d])/g, ' ')
       // uppercase leading underscores followed by lowercase
@@ -194,16 +188,6 @@ export function generateName(from: string, usedNames: Set<string>) {
 
   usedNames.add(name);
   return name;
-}
-
-export function error(...messages: any[]) {
-  console.error(whiteBright.bgRedBright('error'), ...messages);
-}
-
-export function log(...messages: any[]) {
-  if (process.env.VERBOSE) {
-    console.info(whiteBright.bgCyan('debug'), ...messages);
-  }
 }
 
 /**
