@@ -388,7 +388,7 @@ function generateInterfaceMembers(ast: TInterface, options: Options): string {
       )
       .map(
         ([isRequired, keyName, ast, isNullable, type]) =>
-          (hasComment(ast) && !ast.standaloneName ? generateComment(ast.comment) + '\n' : '') +
+          (hasComment(ast) ? generateComment(ast.comment) + '\n' : '') +
           escapeKeyName(keyName) +
           (isRequired ? '' : '?') +
           ': ' +

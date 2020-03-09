@@ -286,7 +286,6 @@ function parseSchema(
   let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => {
     const required: boolean = includes(schema.required || [], key);
 
-    console.log(JSON.stringify(schema, null, 2))
     if (!required && value.default === undefined) {
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
@@ -294,7 +293,6 @@ function parseSchema(
     const ast: AST = parse(value, options, rootSchema, key, true, processed);
     const nullable: boolean = value.nullable || isTypeNullable(value);
     if (value.default === null && !nullable && !hasStandaloneName(ast)) {
-      console.log('By', JSON.stringify(value, null, 2));
       throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.` 
     } else if (!nullable && value.default !== undefined && !validateDefault(ast, value.default)) {
       throw `The default of ${ value.default } in schema ${ schema.id } is not a valid default for type ${ ast.type }.`

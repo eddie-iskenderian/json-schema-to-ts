@@ -42,7 +42,7 @@ async function main(argv: minimist.ParsedArgs) {
     }
     await writeOutput(ts.join(`\n`), argOut);
   } catch (e) {
-    console.log(JSON.stringify(e, null, 2));
+    console.error(JSON.stringify(e, null, 2));
     process.exit(1)
   }
 }
@@ -52,7 +52,6 @@ async function readInput(argIn: string): Promise<string> {
 }
 
 async function writeOutput(ts: string, argOut: string): Promise<void> {
-  console.log(argOut, ts);
   if (!argOut) {
     try {
       process.stdout.write(ts)
