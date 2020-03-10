@@ -1,7 +1,6 @@
 import { JSONSchema4, JSONSchema4Type, JSONSchema4TypeName } from 'json-schema';
 import { includes, map } from 'lodash';
 import { format } from 'util';
-import { Options } from './';
 import { isTypeNullable, typeOfSchema } from './typeOfSchema';
 import {
   AST,
@@ -18,7 +17,6 @@ export type UsedNames = Set<string>;
 
 export function parse(
   schema: JSONSchema4 | JSONSchema4Type,
-  options: Options,
   rootSchema: JSONSchema4 = schema as JSONSchema4,
   keyName?: string,
   isSchema: boolean = true,
@@ -39,7 +37,6 @@ export function parse(
   return isSchema
     ? parseNonLiteral(
       schema as SchemaSchema,
-      options,
       rootSchema,
       keyName,
       set,
@@ -62,7 +59,6 @@ function parseLiteral(
 
 function parseNonLiteral(
   schema: JSONSchema4,
-  options: Options,
   rootSchema: JSONSchema4,
   keyName: string | undefined,
   set: (ast: AST) => AST,
@@ -73,7 +69,7 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.allOf!.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+        params: schema.allOf!.map(_ => parse(_, rootSchema, undefined, true, processed)),
         standaloneName: standaloneName(schema),
         type: 'INTERSECTION'
       });
@@ -88,7 +84,7 @@ function parseNonLiteral(
               _.required = _.required || [keys[0]];
             }
           }
-          return parse(_, options, rootSchema, undefined, true, processed);
+          return parse(_, rootSchema, undefined, true, processed);
         }),
         standaloneName: standaloneName(schema),
         type: 'UNION'
@@ -101,7 +97,7 @@ function parseNonLiteral(
         type: 'BOOLEAN'
       });
     case 'NAMED_SCHEMA':
-      return set(newInterface(schema as SchemaSchema, options, rootSchema, processed, keyName));
+      return set(newInterface(schema as SchemaSchema, rootSchema, processed, keyName));
     case 'NULL':
       return set({
         comment: schema.description,
@@ -134,7 +130,7 @@ function parseNonLiteral(
               _.required = _.required || [keys[0]];
             }
           }
-          return parse(_, options, rootSchema, undefined, true, processed);
+          return parse(_, rootSchema, undefined, true, processed);
         }),
         standaloneName: standaloneName(schema),
         type: 'UNION'
@@ -158,13 +154,13 @@ function parseNonLiteral(
           keyName,
           maxItems,
           minItems,
-          params: schema.items.map(_ => parse(_, options, rootSchema, undefined, true, processed)),
+          params: schema.items.map(_ => parse(_, rootSchema, undefined, true, processed)),
           standaloneName: standaloneName(schema),
           type: 'TUPLE'
         };
         return set(arrayType);
       } else {
-        const params = parse(schema.items!, options, rootSchema, undefined, true, processed);
+        const params = parse(schema.items!, rootSchema, undefined, true, processed);
         return set({
           comment: schema.description,
           keyName,
@@ -178,7 +174,7 @@ function parseNonLiteral(
         comment: schema.description,
         keyName,
         params: (schema.type as JSONSchema4TypeName[]).map(_ =>
-          parse({...schema, type: _}, options, rootSchema, undefined, true, processed)
+          parse({...schema, type: _}, rootSchema, undefined, true, processed)
         ),
         standaloneName: standaloneName(schema),
         type: 'UNION'
@@ -191,14 +187,14 @@ function parseNonLiteral(
       return set({
         comment: schema.description,
         keyName,
-        params: schema.enum!.map(_ => parse(_, options, rootSchema, undefined, false, processed)),
+        params: schema.enum!.map(_ => parse(_, rootSchema, undefined, false, processed)),
         standaloneName: name,
         type: 'ENUM'
       });
     }
     case 'UNNAMED_SCHEMA':
       return set(
-        newInterface(schema as SchemaSchema, options, rootSchema, processed)
+        newInterface(schema as SchemaSchema, rootSchema, processed)
       );
     default:
       throw 'Unknown schema';
@@ -214,7 +210,6 @@ function standaloneName(schema: JSONSchema4): string {
 
 function newInterface(
   schema: SchemaSchema,
-  options: Options,
   rootSchema: JSONSchema4,
   processed: Processed,
   keyName?: string
@@ -233,7 +228,7 @@ function newInterface(
   return {
     comment: schema.description,
     keyName,
-    params: parseSchema(schema, options, rootSchema, processed),
+    params: parseSchema(schema, rootSchema, processed),
     standaloneName: name,
     type: 'INTERFACE'
   };
@@ -274,18 +269,18 @@ function validateDefault(ast: AST, defaultValue: {}|null): boolean {
  */
 function parseSchema(
   schema: SchemaSchema,
-  options: Options,
   rootSchema: JSONSchema4,
   processed: Processed
 ): TInterfaceParam[] {
   let asts: TInterfaceParam[] = map(schema.properties, (value, key: string) => {
     const required: boolean = includes(schema.required || [], key);
 
+    console.log('Parse', JSON.stringify(schema, null, 2), JSON.stringify(value, null, 2));
     if (!required && value.default === undefined) {
       throw `Property ${ key } in schema ${ schema.id } is not required but has no default. Optional fields must have a specified default value.`;
     }
 
-    const ast: AST = parse(value, options, rootSchema, key, true, processed);
+    const ast: AST = parse(value, rootSchema, key, true, processed);
     const nullable: boolean = value.nullable || isTypeNullable(value);
     if (value.default === null && !nullable && !hasStandaloneName(ast)) {
       throw `A default of null in schema ${ schema.id } is not a allowed for a property that is not nullable.`;
