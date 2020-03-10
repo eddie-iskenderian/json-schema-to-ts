@@ -30,12 +30,10 @@ const createPathMap = async (base: string, cwd: string) => {
 
 const schemaReader = async (file: { url: string }, callback?: (error: Error | null, data: string | null) => string): Promise<string> => {
   const path: string = pathMap[file.url];
-  console.log(path);
   const schema = await readInput(path);
   if (callback) {
     callback(null, schema);
   }
-  console.log('My schema', schema);
   return schema;
 };
 
@@ -48,7 +46,6 @@ const getSchemas = async (base: string, cwd: string): Promise<string> => {
     if (stats.isDirectory()) {
       ts.push(await getSchemas(filePath, cwd));
     } else if (stats.isFile()) {
-      console.log('p', schema);
       if (!schema.endsWith('.json')) {
         continue;
       }
@@ -69,7 +66,7 @@ const main = async (argv: minimist.ParsedArgs) => {
   const argIn: string = argv._[0] || argv.input;
   const argOut: string = argv._[1] || argv.output;
   if (!argIn || !argOut) {
-    console.log('input and output parameters are required.');
+    console.log('Both input and output parameters are required.');
     process.exit(1);
   }
 

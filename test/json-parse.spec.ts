@@ -2,6 +2,15 @@ import { readFileSync } from 'fs';
 import { JSONSchema4 } from 'json-schema';
 import { compile } from '../src/index';
 
+const reader = async (file: { url: string }, callback?: (error: Error | null, data: string | null) => string): Promise<string> => {
+  const buffer: Buffer = readFileSync(file.url);
+  const schema: string = buffer.toString();
+  if (callback) {
+    callback(null, schema);
+  }
+  return schema;
+};
+
 beforeAll(() => {
 });
 
@@ -9,13 +18,13 @@ beforeEach(() => {
 });
 
 const normaliseTypes = (types: string) => {
-  return types.replace(/[\s]+/g, ' ');
+  return types.trim().replace(/[\s]+/g, ' ');
 };
 
 const compareTypes = async (schema: string, expectType: string) => {
-  const options = { cwd: 'test/json', declareExternallyReferenced: false, style: { printWidth: 80 } };
+  const cwd: string = 'test/json';
   const jsonSchema: JSONSchema4 = JSON.parse(readFileSync(`test/json/${ schema }`).toString());
-  const typeDef = await compile(jsonSchema, 'test/json', options);
+  const typeDef = await compile(jsonSchema, 'test/json', cwd, reader);
   const typescript = normaliseTypes(expectType);
   expect(normaliseTypes(typeDef)).toContain(typescript);
 };

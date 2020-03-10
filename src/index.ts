@@ -26,7 +26,6 @@ export async function compile(schema: JSONSchema4, name: string, cwd: string, re
     trailingComma: 'none',
     useTabs: false
   };
-  console.log(code);
   return format(code, { parser: 'typescript', ...stypeOptions });
 }
 
