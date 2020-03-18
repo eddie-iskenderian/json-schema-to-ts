@@ -390,15 +390,24 @@ function wrapInterfaceInitialiserAssignments(rendered: string, omitBraces: boole
 }
 
 function generateInterfaceInitialiserAssignments(rootAst: TInterface): string {
-  return (
+  const a = (
     rootAst.params
       .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
-      .map(param =>
-        `${ escapeKeyName(param.keyName) }: ` +
-        (param.isRequired ? `input.${ escapeKeyName(param.keyName) }` : `input.${ escapeKeyName(param.keyName) } === undefined ? ${ param.default } : input.${ escapeKeyName(param.keyName) }`)
-      )
+      .map(param => {
+        const name: string = escapeKeyName(param.keyName);
+        console.log('Name', name, param.ast.type);
+        const input: string = param.ast.type === 'INTERFACE' ?
+          `make${ name }(${ `input.${ name }` })` :
+              `input.${ escapeKeyName(param.keyName) }`;
+        return name +
+          param.isRequired ?
+            `${ name }: ${ input }` :
+              `${ name }: input.${ name } === undefined ? ${ param.default } : ${ input }`;
+      })
       .join(',\n')
   );
+  console.log(a);
+  return a;
 }
 
 function generateComment(comment: string): string {
