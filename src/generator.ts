@@ -247,48 +247,6 @@ function generateIntersectionRefMembers(ast: TIntersection): string {
 }
 
 /**
- * Generate parameters required for the initialiser of an intersection type
- */
-function generateIntersectionInitialiserParams(ast: TIntersection): string {
-  const members: string = generateIntersectionInterfaceInitialiserParams(ast);
-  const refs: string = generateIntersectionRefInitialiserParams(ast);
-
-  let result: string;
-  if (members.length > 0 && refs.length > 0) {
-    result = `${ wrapInterface(members) }\n& ${ refs }`;
-  } else if (members.length > 0) {
-    result = wrapInterface(members);
-  } else if (refs.length > 0) {
-    result = refs;
-  } else {
-    throw 'No members';
-  }
-  return result;
-}
-
-/**
- * Generate interface parameters required for the initialiser of an intersection type
- */
-function generateIntersectionInterfaceInitialiserParams(ast: TIntersection): string {
-  const members = ast.params.filter(m => !m.standaloneName).map(_ => {
-    expectAstType(_, 'INTERFACE');
-    const intrface: TInterface = _ as TInterface;
-    return generateInterfaceInitialiserParams(intrface);
-  });
-  return members.join(`,\n`);
-}
-
-/**
- * Generate reference parameters required for the initialiser of an intersection type
- */
-function generateIntersectionRefInitialiserParams(ast: TIntersection): string {
-  const refs = ast.params.filter(m => !!m.standaloneName).map(_ => {
-    return toSafeString(_.standaloneName!);
-  });
-  return refs.join(`&`);
-}
-
-/**
  * Generate the assignments required for the initialiser of an intersection type
  */
 function generateIntersectionInitialiserAssignments(ast: TIntersection): string {
@@ -353,29 +311,6 @@ function generateInterfaceMembers(iface: TInterface): string {
   );
 }
 
-function wrapInterfaceInitialiserParams(rendered: string, omitBraces: boolean = false): string {
-  return `(\ninput: ${ omitBraces ? '' : '{' }\n${ rendered }\n${ omitBraces ? '' : '}' })`;
-}
-
-function generateInterfaceInitialiserParams(iface: TInterface): string {
-  return (
-    iface.params
-      .filter(_ => !_.isPatternProperty && !_.isUnreachableDefinition)
-      .map(
-        ({isRequired, keyName, ast, isNullable}) =>
-          [isRequired, keyName, ast, isNullable, generateType(ast)] as [boolean, string, AST, boolean, string]
-      )
-      .map(
-        ([isRequired, keyName, ast, isNullable, type]) =>
-          escapeKeyName(keyName) +
-          (isRequired ? '' : '?') +
-          ': ' +
-          `${ (hasStandaloneName(ast) ? toSafeString(type) : type) }${ isNullable ? '| null' : '' }`
-      )
-      .join(',\n')
-  );
-}
-
 function wrapInterfaceInitialiserAssignments(rendered: string, omitBraces: boolean = false): string {
   const retur = `(${ omitBraces ? '' : '{' }\n${ rendered }\n${ omitBraces ? '' : '}'})`;
   return retur;
@@ -409,10 +344,7 @@ function generateStandaloneInterface(ast: TNamedInterface): string {
 function generateStandaloneIntersection(ast: ASTWithStandaloneName): string {
   const intersection: TIntersection = ast as TIntersection;
   return (
-    `export type ${ toSafeString(ast.standaloneName)} = ${ generateIntersectionMembers(intersection) }` +
-    `\n\n` +
-    `export const make${ toSafeString(ast.standaloneName) } = ` +
-    `${ wrapInterfaceInitialiserParams(generateIntersectionInitialiserParams(intersection), true) }: ${ toSafeString(ast.standaloneName) } =>` +
+    `export const make${ toSafeString(ast.standaloneName) } = input =>` +
     `${ wrapInterfaceInitialiserAssignments(generateIntersectionInitialiserAssignments(intersection), true) };`
   );
 }

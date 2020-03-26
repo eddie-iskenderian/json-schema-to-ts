@@ -50,7 +50,9 @@ const getSchemas = async (base: string, cwd: string): Promise<string> => {
   for (const schema of schemas) {
     const filePath = join(base, schema);
     const stats = await fs.stat(filePath);
-    if (stats.isDirectory()) {
+    if (schema.startsWith('package')) {
+      // Ignore npm files
+    } else if (stats.isDirectory()) {
       ts.push(await getSchemas(filePath, cwd));
     } else if (stats.isFile()) {
       if (!schema.endsWith('.json')) {
