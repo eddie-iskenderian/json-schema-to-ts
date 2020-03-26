@@ -8,6 +8,11 @@ import { join, resolve, extname } from 'path';
 import * as _ from 'lodash';
 import { compile } from './index';
 
+const normaliseToken = (path: string): string => `\/${ path.replace(
+    /(^[a-z]|_[a-z])/g,
+    (str: string) => str.length === 1 ? str.toUpperCase() : str.charAt(1).toUpperCase()
+  ).replace('.json', '') }`;
+
 const pathMap: { [id: string]: string } = {};
 
 const createPathMap = async (base: string, cwd: string) => {
@@ -15,20 +20,26 @@ const createPathMap = async (base: string, cwd: string) => {
   for (const schema of schemas) {
     const filePath = join(base, schema);
     const stats = await fs.stat(filePath);
-    if (stats.isDirectory()) {
+    if (schema.startsWith('package')) {
+      // Ignore npm files
+    } else if (stats.isDirectory()) {
       await createPathMap(filePath, cwd);
     } else if (stats.isFile() && extname(schema) === '.json') {
+      const schemaDef = require(filePath);
+      console.log(schemaDef.id);
       // Generate the typescript
-      const token = `${ cwd }/${ schema }`;
+      const token = normaliseToken(schema); // `${ cwd }/${ normaliseToken(schema) }`;
       if (token in pathMap) {
         throw `Duplicate JSON Schema ${ filePath }`;
       }
+      console.log(token);
       pathMap[token] = filePath;
     }
   }
 };
 
 const schemaReader = async (file: { url: string }, callback?: (error: Error | null, data: string | null) => string): Promise<string> => {
+  console.log(file.url);
   const path: string = pathMap[file.url];
   const schema = await readInput(path);
   if (callback) {

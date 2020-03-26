@@ -16,7 +16,7 @@ export async function dereference(
     resolve: {
       file: {
         order: 1,
-        canRead: /\.json$/i,
+        canRead: /.*/i,
         read: fileReader
       },
       http: false,  // Don't resolve remote file references
