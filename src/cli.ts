@@ -8,11 +8,6 @@ import { join, resolve, extname } from 'path';
 import * as _ from 'lodash';
 import { compile } from './index';
 
-const normaliseToken = (path: string): string => `\/${ path.replace(
-    /(^[a-z]|_[a-z])/g,
-    (str: string) => str.length === 1 ? str.toUpperCase() : str.charAt(1).toUpperCase()
-  ).replace('.json', '') }`;
-
 const pathMap: { [id: string]: string } = {};
 
 const createPathMap = async (base: string, cwd: string) => {
@@ -27,13 +22,14 @@ const createPathMap = async (base: string, cwd: string) => {
     } else if (stats.isFile() && extname(schema) === '.json') {
       const schemaDef = require(filePath);
       console.log(schemaDef.id);
+      if (!schemaDef.id) {
+        continue;
+      }
       // Generate the typescript
-      const token = normaliseToken(schema); // `${ cwd }/${ normaliseToken(schema) }`;
-      if (token in pathMap) {
+      if (schemaDef.id in pathMap) {
         throw `Duplicate JSON Schema ${ filePath }`;
       }
-      console.log(token);
-      pathMap[token] = filePath;
+      pathMap[schemaDef.id] = filePath;
     }
   }
 };
